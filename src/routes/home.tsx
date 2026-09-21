@@ -80,8 +80,8 @@ function Home() {
       <Card className="mt-3">
         <CardContent className="p-4">
           <div className="mb-1 flex items-center justify-between">
-            <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">URGE · 14 SAMPLES</p>
-            <p className="font-mono text-xs tabular-nums text-muted-foreground">AVG {avg}</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Urge · 14 samples</p>
+            <p className="text-xs tabular-nums text-muted-foreground">Avg {avg}</p>
           </div>
           <Sparkline values={series} />
           <p className="mt-2 text-xs text-muted-foreground">
@@ -93,7 +93,7 @@ function Home() {
       {!story.narrative ? (
         <Link
           to="/story"
-          className="mt-3 rounded-lg border border-border bg-muted px-4 py-3 text-sm"
+          className="mt-3 rounded-xl bg-secondary px-4 py-3 text-sm text-secondary-foreground"
         >
           Story module empty. Fill it so Buddy can speak to your actual life.
         </Link>
@@ -123,7 +123,7 @@ function Home() {
           <Link
             key={to}
             to={to}
-            className="flex min-h-[6.25rem] flex-col items-start gap-2 rounded-xl border border-border bg-card p-3.5 text-left"
+            className="flex min-h-[6.25rem] flex-col items-start gap-2 rounded-xl bg-card p-3.5 text-left shadow-border"
           >
             <Icon className="size-4 text-primary" strokeWidth={1.75} />
             <span className="text-sm font-medium leading-snug">{label}</span>
@@ -134,13 +134,13 @@ function Home() {
 
       <Card className="mt-4">
         <CardContent className="space-y-2 p-4">
-          <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">DAILY WORD</p>
+          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Daily word</p>
           <p className="text-sm leading-relaxed">“{verse.text}”</p>
-          <p className="font-mono text-[10px] tracking-wide text-muted-foreground">{verse.ref}</p>
+          <p className="text-xs text-muted-foreground">{verse.ref}</p>
         </CardContent>
       </Card>
 
-      <div className="mt-4 rounded-xl border border-border bg-card p-4 text-center">
+      <div className="mt-4 rounded-xl bg-card p-4 text-center shadow-border">
         <p className="text-sm font-medium">Made it through an urge?</p>
         <Button
           className="mt-3 w-full"
@@ -158,9 +158,9 @@ function Home() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card px-2 py-3 text-center">
-      <p className="text-2xl font-medium tabular-nums leading-none tracking-tight">{value}</p>
-      <p className="mt-1 font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{label}</p>
+    <div className="rounded-xl bg-card px-2 py-3 text-center shadow-border">
+      <p className="font-display text-2xl font-medium tabular-nums leading-none tracking-tight">{value}</p>
+      <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
     </div>
   );
 }

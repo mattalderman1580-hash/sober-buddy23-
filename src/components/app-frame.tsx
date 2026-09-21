@@ -29,13 +29,15 @@ export function AppFrame({
         nav ? "pb-[calc(4.75rem+env(safe-area-inset-bottom))]" : "pb-10",
       )}
     >
-      <header className="mb-4 border-b border-border pb-3">
+      <header className="mb-5 pb-3">
         <div className="flex items-center justify-between gap-3">
           {brand ? (
             <div className="flex min-w-0 items-center gap-3">
-              <Mark className="size-10 rounded-md" />
+              <Mark className="size-10 rounded-xl" />
               <div className="min-w-0">
-                <p className="text-[15px] font-medium leading-tight tracking-tight">Sober Buddy</p>
+                <p className="font-display text-[1.15rem] font-medium leading-tight tracking-tight">
+                  Sober Buddy
+                </p>
                 <ClockLine />
               </div>
             </div>
@@ -55,8 +57,6 @@ export function AppFrame({
                 <Settings className="size-5" />
               </Link>
             </Button>
-          ) : brand ? (
-            <span className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">SYS</span>
           ) : (
             <span className="size-11 shrink-0" aria-hidden="true" />
           )}
@@ -75,15 +75,15 @@ function ClockLine() {
     return () => window.clearInterval(id);
   }, []);
   return (
-    <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground">LOCAL · {now}</p>
+    <p className="text-xs text-muted-foreground">{now}</p>
   );
 }
 
 export function LoadingScreen() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-background">
-      <Mark className="rounded-md" />
-      <p className="font-mono text-xs tracking-[0.16em] text-muted-foreground">SOBER BUDDY</p>
+      <Mark className="rounded-xl" />
+      <p className="text-sm text-muted-foreground">Sober Buddy</p>
     </div>
   );
 }

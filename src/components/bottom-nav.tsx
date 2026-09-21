@@ -15,7 +15,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
       aria-label="Primary"
     >
       <div className="mx-auto grid max-w-md grid-cols-5">
@@ -28,7 +28,7 @@ export function BottomNav() {
               key={to}
               to={to}
               className={cn(
-                "flex min-h-14 flex-col items-center justify-center gap-0.5 font-mono text-[10px] tracking-[0.08em]",
+                "flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium",
                 active ? "text-primary" : "text-muted-foreground",
                 crisis && !active ? "text-crisis" : null,
               )}
