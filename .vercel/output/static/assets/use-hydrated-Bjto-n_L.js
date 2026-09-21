@@ -1,0 +1,1 @@
+import{m as e,p as t}from"./index-BXggnRUE.js";import{t as n}from"./store-D1h463Jx.js";var r=e(t(),1);function i(){let[e,t]=(0,r.useState)(!1);return(0,r.useEffect)(()=>{let e=()=>t(!0);return n.persist.hasHydrated()&&e(),n.persist.onFinishHydration(e)},[]),e}export{i as t};

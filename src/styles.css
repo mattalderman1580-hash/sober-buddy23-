@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", "Iowan Old Style", Palatino, "Palatino Linotype", serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --color-background: #efeae0;
+  --color-foreground: #161e1b;
+  --color-card: #f7f3eb;
+  --color-card-foreground: #161e1b;
+  --color-muted: #dfe8e2;
+  --color-muted-foreground: #5a6660;
+  --color-primary: #16382f;
+  --color-primary-foreground: #f4f0e8;
+  --color-secondary: #d5e3db;
+  --color-secondary-foreground: #16382f;
+  --color-accent: #d5e3db;
+  --color-accent-foreground: #16382f;
+  --color-destructive: #7f2a2a;
+  --color-destructive-foreground: #fdf6f4;
+  --color-border: #cfc8ba;
+  --color-input: #cfc8ba;
+  --color-ring: #16382f;
+  --color-crisis: #7f2a2a;
+  --color-crisis-foreground: #fdf6f4;
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius: 0.75rem;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    background-image: radial-gradient(
+      ellipse 80% 42% at 50% -12%,
+      color-mix(in oklab, var(--color-primary) 10%, transparent),
+      transparent 70%
+    );
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@keyframes breathe-ring {
+  0%,
+  100% {
+    transform: scale(0.84);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.breathe-ring {
+  animation: breathe-ring 8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breathe-ring {
+    animation: none;
+    transform: none;
+    opacity: 1;
+  }
+}

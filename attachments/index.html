@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sober Buddy — God First</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand"><span class="logo">🛡️</span><div><h1>Sober Buddy</h1><small>God first. One moment at a time.</small></div></div>
+  <button class="icon" onclick="show('settings')">⚙️</button>
+</header>
+
+<main id="welcome" class="screen active">
+<section class="welcome">
+<div class="cross">✝️</div>
+<p class="eyebrow">GOD FIRST • RECOVERY • PURPOSE</p>
+<h2>When the urge hits,<br><span>you don't have to face it alone.</span></h2>
+<p class="lead">A faith-based AI companion for the moments when you need strength, encouragement, prayer, practical help, or someone to talk to.</p>
+<div class="faith-card"><strong>🙏 Jesus Christ is at the center.</strong>
+<p>God the Father, Jesus Christ our Lord and Savior, and a life of faith come first. Sober Buddy is designed to point you toward God, Scripture, healthy choices, trusted people, and real-world support.</p></div>
+<button class="primary" onclick="show('struggle')">Let's get started →</button>
+</section>
+</main>
+
+<main id="struggle" class="screen">
+<button class="back" onclick="show('welcome')">← Back</button>
+<section class="section-head"><p class="eyebrow">YOUR JOURNEY</p><h2>What are you struggling with?</h2><p>Choose one or more. Your Buddy will tailor support to your choices.</p></section>
+<div class="struggle-grid">
+<button class="struggle" onclick="selectStruggle(this,'Drugs & Alcohol')">💊<b>Drugs & Alcohol</b><small>Recovery & staying clean</small></button>
+<button class="struggle" onclick="selectStruggle(this,'Gambling')">🎰<b>Gambling</b><small>Breaking the cycle</small></button>
+<button class="struggle" onclick="selectStruggle(this,'Porn / Compulsive Sexual Behavior')">🔞<b>Porn / Compulsive Sexual Behavior</b><small>Freedom & self-control</small></button>
+<button class="struggle" onclick="selectStruggle(this,'Binge / Unhealthy Eating')">🍔<b>Binge / Unhealthy Eating</b><small>Healthier habits</small></button>
+<button class="struggle" onclick="selectStruggle(this,'Mental & Emotional Struggles')">🧠<b>Mental & Emotional Struggles</b><small>Peace & support</small></button>
+<button class="struggle faith-choice" onclick="selectStruggle(this,'Growing Closer to God')">✝️<b>Growing Closer to God</b><small>Prayer, Scripture & faith</small></button>
+<button class="struggle" onclick="selectStruggle(this,'Nicotine')">🚭<b>Nicotine</b><small>Breaking nicotine habits</small></button>
+<button class="struggle" onclick="selectStruggle(this,'Phone / Social Media')">📱<b>Phone / Social Media</b><small>More control, less scrolling</small></button>
+<button class="struggle" onclick="selectStruggle(this,'Anger & Impulse Control')">😤<b>Anger & Impulse Control</b><small>Respond instead of react</small></button>
+<button class="struggle" onclick="selectStruggle(this,'Another Habit I Want to Break')">❤️<b>Another Habit</b><small>A habit I want to break</small></button>
+</div>
+<button class="primary" onclick="finishOnboarding()">Build My Sober Buddy →</button>
+</main>
+
+<main id="home" class="screen">
+<section class="hero"><div class="faith-badge">✝️ GOD FIRST</div><p id="selectedLabel">Your journey</p><div id="counter">0 days</div><small id="since">Set your sobriety date in My Recovery.</small></section>
+<section class="motto"><strong>When the urge hits, you don't have to face it alone.</strong><span>Turn toward God. Take the next right step.</span></section>
+<button class="crisis" onclick="startCraving()">🆘 I'M THINKING ABOUT USING / GIVING IN</button>
+<div class="grid">
+<button onclick="show('checkin')">📝<b>Daily Check-In</b><small>How are you doing?</small></button>
+<button onclick="show('recovery')">💪<b>My Recovery</b><small>Reasons, faith & goals</small></button>
+<button onclick="show('faith')">✝️<b>God First</b><small>Prayer & Scripture</small></button>
+<button onclick="show('goals')">🎯<b>Today's Goal</b><small>One small win</small></button>
+<button onclick="show('emergency')">📞<b>Get Help</b><small>Reach someone now</small></button>
+<button onclick="show('struggle')">🔄<b>My Struggles</b><small>Change your focus</small></button>
+</div>
+<div class="win">❤️ <b>Made it through an urge?</b><br><button onclick="celebrate()">I MADE IT THROUGH</button></div>
+</main>
+
+<main id="craving" class="screen">
+<button class="back" onclick="show('home')">← Home</button><h2>Stay with me.</h2>
+<div class="buddy">🤖✝️</div>
+<div class="faith-banner">🙏 <b>God first.</b> Take a breath. Ask Jesus Christ for strength for this moment.</div>
+<div id="chat" class="chat"><p class="ai">I'm here with you. You don't have to solve the rest of your life right now. Let's get through the next few minutes together. What happened right before the urge hit?</p></div>
+<div class="choices">
+<button onclick="reply('talk')">🗣️ Talk to me</button><button onclick="reply('calm')">🧘 Help me calm down</button>
+<button onclick="reply('distract')">🏃 Distract me</button><button onclick="reply('reasons')">💪 Remind me why</button>
+<button onclick="reply('pray')">🙏 Pray with me</button><button onclick="reply('scripture')">📖 Give me Scripture</button>
+</div>
+<div class="timer"><b id="timer">10:00</b><button onclick="startTimer()">Start 10-minute timer</button></div>
+<button class="help" onclick="show('emergency')">I need a real person right now</button>
+</main>
+
+<main id="faith" class="screen">
+<button class="back" onclick="show('home')">← Home</button><p class="eyebrow">GOD FIRST</p><h2>Faith With God</h2>
+<div class="faith-card"><h3>🙏 Pray first</h3><p>“Father God, I need Your strength right now. Jesus, my Lord and Savior, help me choose what is right. Give me wisdom, self-control, and courage for the next step. Amen.”</p></div>
+<div class="scripture"><h3>📖 Scripture for the moment</h3><p><b>“I can do all things through Christ which strengtheneth me.”</b></p><small>Philippians 4:13 (KJV)</small></div>
+<div class="faith-card"><h3>Bring these questions to God</h3><ul><li>What am I feeling right now?</li><li>What am I trying to escape?</li><li>What would honoring God look like in the next 10 minutes?</li><li>Who can I ask for help and accountability?</li></ul></div>
+<button class="primary" onclick="startCraving()">I need strength right now</button>
+</main>
+
+<main id="checkin" class="screen"><button class="back" onclick="show('home')">← Home</button><h2>Daily Check-In</h2>
+<label>How are you feeling?</label><input id="mood" placeholder="hopeful, stressed, tired...">
+<label>Urge level: <span id="cv">0</span>/10</label><input id="cravingRange" type="range" min="0" max="10" value="0" oninput="cv.textContent=this.value">
+<label>What triggered you?</label><textarea id="trigger"></textarea>
+<label>What went well today?</label><textarea id="wintext"></textarea>
+<button onclick="saveCheckin()">Save Check-In</button></main>
+
+<main id="recovery" class="screen"><button class="back" onclick="show('home')">← Home</button><h2>My Recovery</h2>
+<label>Sobriety / start date</label><input id="sobriety" type="date">
+<label>Why am I choosing this life?</label><textarea id="reasons" placeholder="God, family, freedom, future, purpose..."></textarea>
+<label>People I can call</label><textarea id="contacts" placeholder="Name + phone number"></textarea>
+<label>My goals</label><textarea id="mygoals"></textarea>
+<button onclick="saveRecovery()">Save My Recovery Plan</button></main>
+
+<main id="goals" class="screen"><button class="back" onclick="show('home')">← Home</button><h2>Today's Goal</h2>
+<div class="goal"><h3>Keep it simple.</h3><p>Choose one thing today that supports your recovery, faith, or future.</p><input id="goaltext" placeholder="My goal today is..."><button onclick="saveGoal()">Save Goal</button></div></main>
+
+<main id="emergency" class="screen"><button class="back" onclick="show('home')">← Home</button><h2>Get Help Now</h2>
+<div class="warning"><b>Don't face a dangerous moment alone.</b><br>Sober Buddy is support, not a replacement for professional care.</div>
+<button class="big">📞 Call My Support Person</button><button class="big">💬 Text My Support Person</button><button class="big">🆘 Emergency Services</button>
+<p class="note">If you're in immediate physical danger, call <b>911</b>. In the U.S., call or text <b>988</b> for crisis support.</p></main>
+
+<main id="settings" class="screen"><button class="back" onclick="show('home')">← Home</button><h2>Settings</h2>
+<button onclick="show('struggle')">Change My Struggles</button><button onclick="localStorage.clear();location.reload()">Reset prototype data</button>
+<p class="note">Prototype data is stored locally in this browser. A production app should use secure authentication, encrypted storage, privacy controls, and a vetted AI service.</p></main>
+</div><script src="app.js"></script></body></html>
