@@ -17,7 +17,7 @@ export function Mark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground",
+        "inline-flex size-11 items-center justify-center rounded-md bg-primary text-primary-foreground",
         className,
       )}
       aria-hidden="true"

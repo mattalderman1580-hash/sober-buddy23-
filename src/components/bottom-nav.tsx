@@ -28,7 +28,7 @@ export function BottomNav() {
               key={to}
               to={to}
               className={cn(
-                "flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium",
+                "flex min-h-14 flex-col items-center justify-center gap-0.5 font-mono text-[10px] tracking-[0.08em]",
                 active ? "text-primary" : "text-muted-foreground",
                 crisis && !active ? "text-crisis" : null,
               )}

@@ -1,18 +1,23 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { Share2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { HandHelping, MessageCircle, Send } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
+import { AvatarMark } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { createWallPost, createWallReply, listWall, type WallKind, type WallPost } from "@/lib/prayer-wall";
+import { amenWallPost, createWallPost, createWallReply, listWall, type WallKind, type WallPost } from "@/lib/prayer-wall";
+import { ENCOURAGE_TEMPLATES, REQUEST_TEMPLATES } from "@/lib/messages";
 import { useAppStore } from "@/lib/store";
+import { formatRelative } from "@/lib/time";
 import { useHasHydrated } from "@/lib/use-hydrated";
-import { cn, parseContacts } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/wall")({ component: Wall });
+
+type Filter = "all" | "request" | "encourage";
 
 function Wall() {
   const hydrated = useHasHydrated();
@@ -21,11 +26,12 @@ function Wall() {
   const story = useAppStore((s) => s.story);
   const setDisplayName = useAppStore((s) => s.setDisplayName);
   const addLocalPrayer = useAppStore((s) => s.addLocalPrayer);
-  const localPrayers = useAppStore((s) => s.localPrayers);
-  const contacts = parseContacts(useAppStore((s) => s.plan.contacts));
-  const handle = displayName || story.called || "Anonymous";
+  const amenedIds = useAppStore((s) => s.amenedIds);
+  const markAmen = useAppStore((s) => s.markAmen);
+  const handle = displayName || story.called || "";
 
   const [kind, setKind] = useState<WallKind>("request");
+  const [filter, setFilter] = useState<Filter>("all");
   const [name, setName] = useState(handle);
   const [body, setBody] = useState("");
   const [posts, setPosts] = useState<WallPost[]>([]);
@@ -48,6 +54,11 @@ function Wall() {
     void reload();
   }, []);
 
+  const visible = useMemo(
+    () => (filter === "all" ? posts : posts.filter((p) => p.kind === filter)),
+    [posts, filter],
+  );
+
   if (!hydrated) return <LoadingScreen />;
   if (!onboarded) return <Navigate to="/" />;
 
@@ -60,13 +71,13 @@ function Wall() {
     if (kind === "request") addLocalPrayer(body.trim());
     setDisplayName(name.trim());
     setBody("");
-    toast(kind === "request" ? "Request posted to the circle." : "Encouragement posted.");
+    toast(kind === "request" ? "Request is on the circle." : "Encouragement posted.");
     await reload();
   }
 
   async function sendReply(postId: number) {
     const res = await createWallReply({
-      data: { postId, displayName: name, body: reply },
+      data: { postId, displayName: name || "Friend", body: reply },
     });
     if (!res.ok) {
       toast(res.error);
@@ -74,138 +85,191 @@ function Wall() {
     }
     setReply("");
     setReplyFor(null);
-    toast("Sent.");
+    toast("Encouragement sent.");
     await reload();
   }
 
-  function shareText(text: string) {
-    const payload = `Prayer from Sober Buddy:\n\n${text}\n\nI'm asking you to pray with me.`;
-    if (typeof navigator !== "undefined" && navigator.share) {
-      void navigator.share({ title: "Prayer request", text: payload }).catch(() => {
-        copy(payload);
-      });
+  async function amen(post: WallPost) {
+    if (amenedIds.includes(post.id)) return;
+    const res = await amenWallPost({ data: { postId: post.id } });
+    if (!res.ok) {
+      toast(res.error);
       return;
     }
-    copy(payload);
+    markAmen(post.id);
+    setPosts((cur) => cur.map((p) => (p.id === post.id ? { ...p, amenCount: res.count } : p)));
   }
 
-  function copy(text: string) {
-    void navigator.clipboard.writeText(text).then(
-      () => toast("Copied. Paste it to someone who will pray."),
-      () => toast("Could not copy."),
-    );
-  }
+  const templates = kind === "request" ? REQUEST_TEMPLATES : ENCOURAGE_TEMPLATES;
 
   return (
-    <AppFrame title="Prayer circle">
-      <p className="text-sm leading-relaxed text-muted-foreground">
-        Post a request or a word of encouragement. This wall is public — first name only, no
-        medical details, no phone numbers.
+    <AppFrame title="Circle">
+      <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">
+        PUBLIC FEED · FIRST NAME ONLY · NO PHONES
+      </p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        Ask for prayer or send a word of encouragement. Reply on a request like a quiet social
+        thread. Send privately from People.
       </p>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <Button variant={kind === "request" ? "default" : "outline"} onClick={() => setKind("request")}>
-          Prayer request
-        </Button>
-        <Button
-          variant={kind === "encourage" ? "default" : "outline"}
-          onClick={() => setKind("encourage")}
-        >
-          Encouragement
-        </Button>
-      </div>
-
-      <div className="mt-3 space-y-2">
-        <Input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="First name"
-          aria-label="Display name"
-        />
-        <Textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder={
-            kind === "request"
-              ? "Ask for prayer in a sentence or two…"
-              : "A short word of courage for someone on this wall…"
-          }
-        />
-        <Button className="w-full" onClick={() => void publish()} disabled={body.trim().length < 8}>
-          Post to the circle
-        </Button>
-      </div>
-
-      {contacts.filter((c) => c.phone).length ? (
-        <Card className="mt-4">
-          <CardContent className="space-y-2 p-4">
-            <p className="text-sm font-medium">Send to my people</p>
-            <p className="text-xs text-muted-foreground">
-              Uses numbers you saved in My Recovery. Opens a text with your words.
-            </p>
-            <div className="flex flex-col gap-2">
-              {contacts
-                .filter((c) => c.phone)
-                .map((c) => (
-                  <Button key={`${c.name}-${c.phone}`} asChild variant="outline" size="sm">
-                    <a
-                      href={`sms:${c.phone.replace(/[^\d+]/g, "")}?body=${encodeURIComponent(
-                        `It's ${name || "me"}. Can you pray? ${body.trim() || "I need prayer today."}`,
-                      )}`}
-                    >
-                      Text {c.name}
-                    </a>
-                  </Button>
-                ))}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full"
-              onClick={() =>
-                shareText(body.trim() || "Would you pray for me today? I need strength.")
-              }
+      <Card className="mt-4">
+        <CardContent className="space-y-3 p-4">
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => setKind("request")}
+              className={cn(
+                "h-9 rounded-md text-sm font-medium",
+                kind === "request" ? "bg-card text-foreground" : "text-muted-foreground",
+              )}
             >
-              <Share2 className="size-4" />
-              Share another way
+              Request
+            </button>
+            <button
+              type="button"
+              onClick={() => setKind("encourage")}
+              className={cn(
+                "h-9 rounded-md text-sm font-medium",
+                kind === "encourage" ? "bg-card text-foreground" : "text-muted-foreground",
+              )}
+            >
+              Encourage
+            </button>
+          </div>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="First name"
+            aria-label="Display name"
+          />
+          <Textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            maxLength={280}
+            placeholder={
+              kind === "request"
+                ? "Ask for prayer in a sentence or two…"
+                : "A short word of courage for the circle…"
+            }
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {templates.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setBody(t)}
+                className="rounded-md border border-border px-2 py-1 text-left text-[11px] leading-snug text-muted-foreground"
+              >
+                {t.slice(0, 42)}…
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-mono text-[10px] tabular-nums text-muted-foreground">{body.length}/280</p>
+            <Button size="sm" onClick={() => void publish()} disabled={body.trim().length < 8 || name.trim().length < 2}>
+              <Send className="size-4" />
+              Post
             </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <p className="mt-4 text-xs text-muted-foreground">
-          Add people in My Recovery to text a request directly.
-        </p>
-      )}
+          </div>
+        </CardContent>
+      </Card>
 
-      <section className="mt-6 space-y-3">
-        <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">FEED</p>
-        {loading ? <p className="text-sm text-muted-foreground">Loading circle…</p> : null}
-        {!loading && posts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Be the first to post.</p>
+      <Button asChild variant="outline" className="mt-3 w-full">
+        <Link to="/people">Send to someone I know</Link>
+      </Button>
+
+      <div className="mt-5 flex gap-1">
+        {(
+          [
+            ["all", "All"],
+            ["request", "Requests"],
+            ["encourage", "Courage"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setFilter(id)}
+            className={cn(
+              "h-8 rounded-full px-3 font-mono text-[10px] tracking-[0.12em]",
+              filter === id ? "bg-secondary text-secondary-foreground" : "text-muted-foreground",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <section className="mt-3 space-y-2.5">
+        {loading ? <p className="text-sm text-muted-foreground">Loading feed…</p> : null}
+        {!loading && visible.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No posts in this filter. Be the first.</p>
         ) : null}
-        {posts.map((p) => (
-          <Card key={p.id}>
-            <CardContent className="space-y-2 p-4">
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="text-sm font-medium">{p.displayName}</p>
-                <span
-                  className={cn(
-                    "font-mono text-[10px] tracking-wide",
-                    p.kind === "request" ? "text-crisis" : "text-muted-foreground",
-                  )}
-                >
-                  {p.kind === "request" ? "REQUEST" : "ENCOURAGE"}
-                </span>
-              </div>
-              <p className="text-sm leading-relaxed">{p.body}</p>
-              {p.replies.map((r) => (
-                <div key={r.id} className="rounded-lg bg-muted px-3 py-2">
-                  <p className="text-xs font-medium">{r.displayName}</p>
-                  <p className="text-sm leading-relaxed">{r.body}</p>
+        {visible.map((p) => {
+          const prayed = amenedIds.includes(p.id);
+          return (
+            <article key={p.id} className="rounded-xl border border-border bg-card p-4">
+              <div className="flex gap-3">
+                <AvatarMark name={p.displayName} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="truncate text-sm font-medium">{p.displayName}</p>
+                    <p className="font-mono text-[10px] text-muted-foreground">{formatRelative(p.createdAt)}</p>
+                  </div>
+                  <p
+                    className={cn(
+                      "font-mono text-[10px] tracking-[0.14em]",
+                      p.kind === "request" ? "text-crisis" : "text-primary",
+                    )}
+                  >
+                    {p.kind === "request" ? "PRAYER REQUEST" : "ENCOURAGEMENT"}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed">{p.body}</p>
                 </div>
-              ))}
+              </div>
+
+              {p.replies.length ? (
+                <ul className="mt-3 space-y-2 border-l border-border pl-3">
+                  {p.replies.map((r) => (
+                    <li key={r.id} className="flex gap-2">
+                      <AvatarMark name={r.displayName} className="size-7 text-[9px]" />
+                      <div>
+                        <p className="text-xs font-medium">
+                          {r.displayName}{" "}
+                          <span className="font-mono font-normal text-muted-foreground">
+                            {formatRelative(r.createdAt)}
+                          </span>
+                        </p>
+                        <p className="text-sm leading-relaxed text-muted-foreground">{r.body}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant={prayed ? "secondary" : "outline"}
+                  onClick={() => void amen(p)}
+                  disabled={prayed}
+                >
+                  <HandHelping className="size-4" />
+                  {prayed ? "Praying" : "I'm praying"}
+                  <span className="font-mono tabular-nums">{p.amenCount}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setReplyFor(replyFor === p.id ? null : p.id)}
+                >
+                  <MessageCircle className="size-4" />
+                  Encourage
+                </Button>
+              </div>
+
               {replyFor === p.id ? (
-                <div className="space-y-2">
+                <div className="mt-3 space-y-2">
                   <Textarea
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
@@ -215,28 +279,11 @@ function Wall() {
                     Send encouragement
                   </Button>
                 </div>
-              ) : (
-                <Button size="sm" variant="outline" onClick={() => setReplyFor(p.id)}>
-                  Encourage
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+              ) : null}
+            </article>
+          );
+        })}
       </section>
-
-      {localPrayers.length ? (
-        <section className="mt-8">
-          <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">ON THIS DEVICE</p>
-          <ul className="mt-2 space-y-2">
-            {localPrayers.slice(0, 5).map((p) => (
-              <li key={p.id} className="rounded-xl border border-border bg-card px-4 py-3 text-sm">
-                {p.body}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
     </AppFrame>
   );
 }

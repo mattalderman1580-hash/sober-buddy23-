@@ -3,8 +3,17 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { canSpeak, speak, stopSpeak } from "@/lib/speak";
+import { cn } from "@/lib/utils";
 
-export function SpeakButton({ text, label = "Speak this prayer" }: { text: string; label?: string }) {
+export function SpeakButton({
+  text,
+  label = "Speak this prayer",
+  className,
+}: {
+  text: string;
+  label?: string;
+  className?: string;
+}) {
   const [on, setOn] = useState(false);
 
   useEffect(() => () => stopSpeak(), []);
@@ -13,7 +22,7 @@ export function SpeakButton({ text, label = "Speak this prayer" }: { text: strin
     <Button
       type="button"
       variant="secondary"
-      className="w-full"
+      className={cn("w-full", className)}
       onClick={() => {
         if (on) {
           stopSpeak();

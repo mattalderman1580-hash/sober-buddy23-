@@ -11,6 +11,7 @@ export interface WallPost {
   displayName: string;
   body: string;
   createdAt: string;
+  amenCount: number;
   replies: WallReply[];
 }
 
@@ -48,7 +49,8 @@ export const listWall = createServerFn({ method: "GET" }).handler(async (): Prom
     display_name: string;
     body: string;
     created_at: string;
-  }>`select id, kind, display_name, body, created_at from prayer_posts order by created_at desc limit 40`;
+    amen_count: number;
+  }>`select id, kind, display_name, body, created_at, amen_count from prayer_posts order by created_at desc limit 48`;
 
   if (!posts.length) return [];
 
@@ -79,6 +81,7 @@ export const listWall = createServerFn({ method: "GET" }).handler(async (): Prom
     displayName: p.display_name,
     body: p.body,
     createdAt: asIso(p.created_at),
+    amenCount: Number(p.amen_count ?? 0),
     replies: byPost.get(p.id) ?? [],
   }));
 });
@@ -119,4 +122,23 @@ export const createWallReply = createServerFn({ method: "POST" })
       values (${data.postId}, ${displayName}, ${body})
     `;
     return { ok: true };
+  });
+
+const AmenInput = z.object({
+  postId: z.number().int().positive(),
+});
+
+export const amenWallPost = createServerFn({ method: "POST" })
+  .validator((input: unknown) => AmenInput.parse(input))
+  .handler(async ({ data }): Promise<{ ok: true; count: number } | { ok: false; error: string }> => {
+    const sql = await getSql();
+    const rows = await sql<{ amen_count: number }>`
+      update prayer_posts
+      set amen_count = amen_count + 1
+      where id = ${data.postId}
+      returning amen_count
+    `;
+    const count = rows[0]?.amen_count;
+    if (count === undefined) return { ok: false, error: "That post is gone." };
+    return { ok: true, count: Number(count) };
   });

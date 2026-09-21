@@ -4,6 +4,7 @@ import type {
   ChatMessage,
   CheckIn,
   DailyGoal,
+  JournalEntry,
   LocalPrayer,
   RecoveryPlan,
   Slip,
@@ -29,6 +30,8 @@ interface AppState {
   standingGoals: StandingGoal[];
   slips: Slip[];
   localPrayers: LocalPrayer[];
+  journal: JournalEntry[];
+  amenedIds: number[];
   displayName: string;
   setStruggles: (ids: StruggleId[]) => void;
   finishOnboarding: (ids: StruggleId[]) => void;
@@ -48,6 +51,8 @@ interface AppState {
   removeStandingGoal: (id: string) => void;
   addSlip: (entry: Omit<Slip, "id" | "at">) => void;
   addLocalPrayer: (body: string) => void;
+  addJournal: (body: string) => void;
+  markAmen: (postId: number) => void;
   resetAll: () => void;
 }
 
@@ -71,6 +76,8 @@ const INITIAL = {
   standingGoals: [] as StandingGoal[],
   slips: [] as Slip[],
   localPrayers: [] as LocalPrayer[],
+  journal: [] as JournalEntry[],
+  amenedIds: [] as number[],
   displayName: "",
 };
 
@@ -165,6 +172,20 @@ export const useAppStore = create<AppState>()(
           ].slice(0, 40),
         });
       },
+      addJournal: (body) => {
+        const clean = body.trim();
+        if (!clean) return;
+        set({
+          journal: [
+            { id: uid(), at: new Date().toISOString(), body: clean },
+            ...get().journal,
+          ].slice(0, 80),
+        });
+      },
+      markAmen: (postId) => {
+        if (get().amenedIds.includes(postId)) return;
+        set({ amenedIds: [...get().amenedIds, postId].slice(-200) });
+      },
       resetAll: () => set({ ...INITIAL, chat: [OPENING] }),
     }),
     {
@@ -183,6 +204,8 @@ export const useAppStore = create<AppState>()(
         standingGoals: s.standingGoals,
         slips: s.slips,
         localPrayers: s.localPrayers,
+        journal: s.journal,
+        amenedIds: s.amenedIds,
         displayName: s.displayName,
       }),
       merge: (persisted, current) => {
@@ -201,6 +224,8 @@ export const useAppStore = create<AppState>()(
           standingGoals: p.standingGoals ?? [],
           slips: p.slips ?? [],
           localPrayers: p.localPrayers ?? [],
+          journal: p.journal ?? [],
+          amenedIds: p.amenedIds ?? [],
           displayName: p.displayName ?? "",
         };
       },

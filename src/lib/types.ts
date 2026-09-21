@@ -91,6 +91,12 @@ export interface LocalPrayer {
   body: string;
 }
 
+export interface JournalEntry {
+  id: string;
+  at: string;
+  body: string;
+}
+
 export const EMPTY_STORY: Story = {
   called: "",
   narrative: "",

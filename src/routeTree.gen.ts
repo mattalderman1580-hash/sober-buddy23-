@@ -17,9 +17,13 @@ import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as InsightsRouteImport } from './routes/insights'
+import { Route as JournalRouteImport } from './routes/journal'
+import { Route as LogRouteImport } from './routes/log'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PatternsRouteImport } from './routes/patterns'
+import { Route as PeopleRouteImport } from './routes/people'
 import { Route as RecoveryRouteImport } from './routes/recovery'
+import { Route as ScriptureRouteImport } from './routes/scripture'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SlipRouteImport } from './routes/slip'
 import { Route as StoryRouteImport } from './routes/story'
@@ -66,6 +70,16 @@ const InsightsRoute = InsightsRouteImport.update({
   path: '/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JournalRoute = JournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LogRoute = LogRouteImport.update({
+  id: '/log',
+  path: '/log',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -76,9 +90,19 @@ const PatternsRoute = PatternsRouteImport.update({
   path: '/patterns',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PeopleRoute = PeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecoveryRoute = RecoveryRouteImport.update({
   id: '/recovery',
   path: '/recovery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScriptureRoute = ScriptureRouteImport.update({
+  id: '/scripture',
+  path: '/scripture',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -116,9 +140,13 @@ export interface FileRoutesByFullPath {
   '/help': typeof HelpRoute
   '/home': typeof HomeRoute
   '/insights': typeof InsightsRoute
+  '/journal': typeof JournalRoute
+  '/log': typeof LogRoute
   '/onboarding': typeof OnboardingRoute
   '/patterns': typeof PatternsRoute
+  '/people': typeof PeopleRoute
   '/recovery': typeof RecoveryRoute
+  '/scripture': typeof ScriptureRoute
   '/settings': typeof SettingsRoute
   '/slip': typeof SlipRoute
   '/story': typeof StoryRoute
@@ -134,9 +162,13 @@ export interface FileRoutesByTo {
   '/help': typeof HelpRoute
   '/home': typeof HomeRoute
   '/insights': typeof InsightsRoute
+  '/journal': typeof JournalRoute
+  '/log': typeof LogRoute
   '/onboarding': typeof OnboardingRoute
   '/patterns': typeof PatternsRoute
+  '/people': typeof PeopleRoute
   '/recovery': typeof RecoveryRoute
+  '/scripture': typeof ScriptureRoute
   '/settings': typeof SettingsRoute
   '/slip': typeof SlipRoute
   '/story': typeof StoryRoute
@@ -153,9 +185,13 @@ export interface FileRoutesById {
   '/help': typeof HelpRoute
   '/home': typeof HomeRoute
   '/insights': typeof InsightsRoute
+  '/journal': typeof JournalRoute
+  '/log': typeof LogRoute
   '/onboarding': typeof OnboardingRoute
   '/patterns': typeof PatternsRoute
+  '/people': typeof PeopleRoute
   '/recovery': typeof RecoveryRoute
+  '/scripture': typeof ScriptureRoute
   '/settings': typeof SettingsRoute
   '/slip': typeof SlipRoute
   '/story': typeof StoryRoute
@@ -173,9 +209,13 @@ export interface FileRouteTypes {
     | '/help'
     | '/home'
     | '/insights'
+    | '/journal'
+    | '/log'
     | '/onboarding'
     | '/patterns'
+    | '/people'
     | '/recovery'
+    | '/scripture'
     | '/settings'
     | '/slip'
     | '/story'
@@ -191,9 +231,13 @@ export interface FileRouteTypes {
     | '/help'
     | '/home'
     | '/insights'
+    | '/journal'
+    | '/log'
     | '/onboarding'
     | '/patterns'
+    | '/people'
     | '/recovery'
+    | '/scripture'
     | '/settings'
     | '/slip'
     | '/story'
@@ -209,9 +253,13 @@ export interface FileRouteTypes {
     | '/help'
     | '/home'
     | '/insights'
+    | '/journal'
+    | '/log'
     | '/onboarding'
     | '/patterns'
+    | '/people'
     | '/recovery'
+    | '/scripture'
     | '/settings'
     | '/slip'
     | '/story'
@@ -228,9 +276,13 @@ export interface RootRouteChildren {
   HelpRoute: typeof HelpRoute
   HomeRoute: typeof HomeRoute
   InsightsRoute: typeof InsightsRoute
+  JournalRoute: typeof JournalRoute
+  LogRoute: typeof LogRoute
   OnboardingRoute: typeof OnboardingRoute
   PatternsRoute: typeof PatternsRoute
+  PeopleRoute: typeof PeopleRoute
   RecoveryRoute: typeof RecoveryRoute
+  ScriptureRoute: typeof ScriptureRoute
   SettingsRoute: typeof SettingsRoute
   SlipRoute: typeof SlipRoute
   StoryRoute: typeof StoryRoute
@@ -296,6 +348,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/journal': {
+      id: '/journal'
+      path: '/journal'
+      fullPath: '/journal'
+      preLoaderRoute: typeof JournalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/log': {
+      id: '/log'
+      path: '/log'
+      fullPath: '/log'
+      preLoaderRoute: typeof LogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -310,11 +376,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PatternsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/people': {
+      id: '/people'
+      path: '/people'
+      fullPath: '/people'
+      preLoaderRoute: typeof PeopleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/recovery': {
       id: '/recovery'
       path: '/recovery'
       fullPath: '/recovery'
       preLoaderRoute: typeof RecoveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scripture': {
+      id: '/scripture'
+      path: '/scripture'
+      fullPath: '/scripture'
+      preLoaderRoute: typeof ScriptureRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -364,9 +444,13 @@ const rootRouteChildren: RootRouteChildren = {
   HelpRoute: HelpRoute,
   HomeRoute: HomeRoute,
   InsightsRoute: InsightsRoute,
+  JournalRoute: JournalRoute,
+  LogRoute: LogRoute,
   OnboardingRoute: OnboardingRoute,
   PatternsRoute: PatternsRoute,
+  PeopleRoute: PeopleRoute,
   RecoveryRoute: RecoveryRoute,
+  ScriptureRoute: ScriptureRoute,
   SettingsRoute: SettingsRoute,
   SlipRoute: SlipRoute,
   StoryRoute: StoryRoute,

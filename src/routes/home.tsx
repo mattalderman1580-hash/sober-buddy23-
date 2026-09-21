@@ -1,12 +1,17 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import {
+  Activity,
+  BookMarked,
   BookOpen,
   ClipboardList,
   Flag,
   Heart,
   LifeBuoy,
-  Activity,
+  ListTree,
+  NotebookPen,
   ScrollText,
+  Send,
+  ShieldAlert,
   Target,
   Users,
   Waypoints,
@@ -14,7 +19,6 @@ import {
 import { toast } from "sonner";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
 import { Sparkline } from "@/components/sparkline";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { verseForDay } from "@/lib/scripture";
@@ -26,16 +30,21 @@ import { daysSince, todayKey } from "@/lib/utils";
 export const Route = createFileRoute("/home")({ component: Home });
 
 const LINKS = [
-  { to: "/story", label: "Your Story", blurb: "Identity & faith", Icon: ScrollText },
-  { to: "/patterns", label: "Triggers", blurb: "Behavior patterns", Icon: Waypoints },
-  { to: "/checkin", label: "Check-In", blurb: "Daily signal", Icon: ClipboardList },
+  { to: "/wall", label: "Circle", blurb: "Prayer feed", Icon: Users },
+  { to: "/people", label: "People", blurb: "Text a request", Icon: Send },
+  { to: "/urge", label: "Urge mode", blurb: "Stay with me", Icon: ShieldAlert },
+  { to: "/story", label: "Story", blurb: "Identity & faith", Icon: ScrollText },
+  { to: "/patterns", label: "Triggers", blurb: "Behavior map", Icon: Waypoints },
+  { to: "/checkin", label: "Check-in", blurb: "Daily signal", Icon: ClipboardList },
   { to: "/goals", label: "Goals", blurb: "Today + standing", Icon: Target },
   { to: "/faith", label: "God First", blurb: "Pray & hear it", Icon: BookOpen },
-  { to: "/wall", label: "Prayer Circle", blurb: "Ask & encourage", Icon: Users },
-  { to: "/slip", label: "After a Slip", blurb: "Learn, don't shame", Icon: Flag },
+  { to: "/scripture", label: "Scripture", blurb: "KJV library", Icon: BookMarked },
+  { to: "/journal", label: "Journal", blurb: "Private log", Icon: NotebookPen },
+  { to: "/slip", label: "After a slip", blurb: "Learn, no shame", Icon: Flag },
+  { to: "/log", label: "Event log", blurb: "Merged timeline", Icon: ListTree },
   { to: "/recovery", label: "Plan", blurb: "Date & contacts", Icon: Heart },
-  { to: "/insights", label: "Data", blurb: "Trends", Icon: Activity },
-  { to: "/help", label: "Get Help", blurb: "Call someone", Icon: LifeBuoy },
+  { to: "/insights", label: "Telemetry", blurb: "Urge trends", Icon: Activity },
+  { to: "/help", label: "Get help", blurb: "Call someone", Icon: LifeBuoy },
 ] as const;
 
 function Home() {
@@ -64,18 +73,18 @@ function Home() {
     <AppFrame brand showSettings>
       <div className="grid grid-cols-3 gap-2">
         <Metric label="Days" value={days === null ? "—" : String(days)} />
-        <Metric label="Check-ins" value={String(checkins.length)} />
+        <Metric label="Chk-in" value={String(checkins.length)} />
         <Metric label="Wins" value={String(wins.length)} />
       </div>
 
       <Card className="mt-3">
         <CardContent className="p-4">
           <div className="mb-1 flex items-center justify-between">
-            <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">URGE · LAST 14</p>
+            <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">URGE · 14 SAMPLES</p>
             <p className="font-mono text-xs tabular-nums text-muted-foreground">AVG {avg}</p>
           </div>
           <Sparkline values={series} />
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-2 text-xs text-muted-foreground">
             {labels.length ? labels.join(" · ") : "Select struggles to tailor support."}
           </p>
         </CardContent>
@@ -84,9 +93,9 @@ function Home() {
       {!story.narrative ? (
         <Link
           to="/story"
-          className="mt-3 rounded-xl border border-border bg-muted px-4 py-3 text-sm"
+          className="mt-3 rounded-lg border border-border bg-muted px-4 py-3 text-sm"
         >
-          Your Story is empty. Fill it so Buddy can speak to your actual life.
+          Story module empty. Fill it so Buddy can speak to your actual life.
         </Link>
       ) : null}
 
@@ -94,18 +103,27 @@ function Home() {
         <Link to="/urge">I'm thinking about using</Link>
       </Button>
 
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Button asChild variant="secondary" className="h-11">
+          <Link to="/wall">Prayer circle</Link>
+        </Button>
+        <Button asChild variant="outline" className="h-11">
+          <Link to="/people">Send to people</Link>
+        </Button>
+      </div>
+
       {goalToday ? (
         <p className="mt-3 text-center text-sm text-muted-foreground">
           Today · <span className="text-foreground">{goalToday}</span>
         </p>
       ) : null}
 
-      <div className="mt-4 grid grid-cols-2 gap-2.5">
+      <div className="mt-4 grid grid-cols-2 gap-2">
         {LINKS.map(({ to, label, blurb, Icon }) => (
           <Link
             key={to}
             to={to}
-            className="flex min-h-[6.5rem] flex-col items-start gap-2 rounded-2xl border border-border bg-card p-4 text-left"
+            className="flex min-h-[6.25rem] flex-col items-start gap-2 rounded-xl border border-border bg-card p-3.5 text-left"
           >
             <Icon className="size-4 text-primary" strokeWidth={1.75} />
             <span className="text-sm font-medium leading-snug">{label}</span>
@@ -115,14 +133,14 @@ function Home() {
       </div>
 
       <Card className="mt-4">
-        <CardContent className="space-y-2 p-5">
-          <Badge variant="secondary">Scripture</Badge>
-          <p className="font-display text-lg font-medium leading-snug">“{verse.text}”</p>
+        <CardContent className="space-y-2 p-4">
+          <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">DAILY WORD</p>
+          <p className="text-sm leading-relaxed">“{verse.text}”</p>
           <p className="font-mono text-[10px] tracking-wide text-muted-foreground">{verse.ref}</p>
         </CardContent>
       </Card>
 
-      <div className="mt-4 rounded-2xl border border-border bg-card p-5 text-center">
+      <div className="mt-4 rounded-xl border border-border bg-card p-4 text-center">
         <p className="text-sm font-medium">Made it through an urge?</p>
         <Button
           className="mt-3 w-full"
@@ -140,8 +158,8 @@ function Home() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card px-2 py-3 text-center">
-      <p className="font-display text-2xl font-medium tabular-nums leading-none">{value}</p>
+    <div className="rounded-lg border border-border bg-card px-2 py-3 text-center">
+      <p className="text-2xl font-medium tabular-nums leading-none tracking-tight">{value}</p>
       <p className="mt-1 font-mono text-[10px] tracking-[0.14em] text-muted-foreground">{label}</p>
     </div>
   );

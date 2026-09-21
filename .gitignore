@@ -3,3 +3,11 @@ node_modules/
 .github_repo
 .env
 .env.*
+.vercel/
+screenshots/
+artifacts/
+.tanstack/
+.grok/preview.log
+.grok/status
+.grok/og-pending
+.grok/favicon-16.png
