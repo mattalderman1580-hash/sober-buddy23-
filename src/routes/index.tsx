@@ -39,7 +39,7 @@ function Welcome() {
           you don’t have to face it alone.
         </h1>
         <p className="mt-4 max-w-sm text-base leading-relaxed text-muted-foreground">
-          Prayer, Scripture, a 10-minute timer, and a circle that can encourage you — for the next
+          Prayer, Scripture, a 15-minute timer, and a circle that can encourage you — for the next
           right step, not the whole rest of your life.
         </p>
 

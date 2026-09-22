@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
-const DURATION = 10 * 60;
+const DURATION = 15 * 60;
 
 function format(s: number) {
   const m = Math.floor(s / 60);
@@ -22,7 +22,7 @@ export function UrgeTimer() {
       setLeft(next);
       if (next === 0) {
         setRunning(false);
-        toast("You made it through 10 minutes. Pause, pray, and take the next right step.");
+        toast("You made it through 15 minutes. Pause, pray, and take the next right step.");
       }
     }, 250);
     return () => window.clearInterval(id);
@@ -41,7 +41,7 @@ export function UrgeTimer() {
 
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-5 py-5">
-      <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground">TEN MINUTES</p>
+      <p className="text-xs font-medium tracking-[0.16em] text-muted-foreground">FIFTEEN MINUTES</p>
       <p className="font-display text-5xl font-medium tabular-nums leading-none tracking-tight">{format(left)}</p>
       {running ? (
         <Button variant="outline" onClick={stop}>
@@ -49,7 +49,7 @@ export function UrgeTimer() {
         </Button>
       ) : (
         <Button variant="secondary" onClick={start}>
-          Start 10-minute timer
+          Start 15-minute timer
         </Button>
       )}
     </div>
