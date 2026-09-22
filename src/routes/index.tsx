@@ -13,16 +13,16 @@ function Welcome() {
   const { user, isPending } = useCurrentUserState();
   const onboarded = useAppStore((s) => s.onboarded);
 
-  if (!hydrated || isPending) {
+  if (!hydrated) {
     return (
-      <main className="grid min-h-dvh place-items-center p-6">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      <main className="grid min-h-dvh place-items-center bg-background p-6">
+        <p className="text-sm text-muted-foreground">Sober Buddy</p>
       </main>
     );
   }
 
-  if (user && onboarded) return <Navigate to="/home" />;
-  if (user && !onboarded) return <Navigate to="/onboarding" />;
+  if (!isPending && user && onboarded) return <Navigate to="/home" />;
+  if (!isPending && user && !onboarded) return <Navigate to="/onboarding" />;
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-10 pt-[max(2.5rem,env(safe-area-inset-top))]">
