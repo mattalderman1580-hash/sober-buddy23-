@@ -19,6 +19,7 @@ import { Route as HomeRouteImport } from './routes/home'
 import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as JournalRouteImport } from './routes/journal'
 import { Route as LogRouteImport } from './routes/log'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PatternsRouteImport } from './routes/patterns'
 import { Route as PeopleRouteImport } from './routes/people'
@@ -29,6 +30,7 @@ import { Route as SlipRouteImport } from './routes/slip'
 import { Route as StoryRouteImport } from './routes/story'
 import { Route as UrgeRouteImport } from './routes/urge'
 import { Route as WallRouteImport } from './routes/wall'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -78,6 +80,11 @@ const JournalRoute = JournalRouteImport.update({
 const LogRoute = LogRouteImport.update({
   id: '/log',
   path: '/log',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -130,6 +137,11 @@ const WallRoute = WallRouteImport.update({
   path: '/wall',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -142,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/insights': typeof InsightsRoute
   '/journal': typeof JournalRoute
   '/log': typeof LogRoute
+  '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
@@ -152,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/story': typeof StoryRoute
   '/urge': typeof UrgeRoute
   '/wall': typeof WallRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -164,6 +178,7 @@ export interface FileRoutesByTo {
   '/insights': typeof InsightsRoute
   '/journal': typeof JournalRoute
   '/log': typeof LogRoute
+  '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
@@ -174,6 +189,7 @@ export interface FileRoutesByTo {
   '/story': typeof StoryRoute
   '/urge': typeof UrgeRoute
   '/wall': typeof WallRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -187,6 +203,7 @@ export interface FileRoutesById {
   '/insights': typeof InsightsRoute
   '/journal': typeof JournalRoute
   '/log': typeof LogRoute
+  '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
@@ -197,6 +214,7 @@ export interface FileRoutesById {
   '/story': typeof StoryRoute
   '/urge': typeof UrgeRoute
   '/wall': typeof WallRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -211,6 +229,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/journal'
     | '/log'
+    | '/login'
     | '/onboarding'
     | '/patterns'
     | '/people'
@@ -221,6 +240,7 @@ export interface FileRouteTypes {
     | '/story'
     | '/urge'
     | '/wall'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -233,6 +253,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/journal'
     | '/log'
+    | '/login'
     | '/onboarding'
     | '/patterns'
     | '/people'
@@ -243,6 +264,7 @@ export interface FileRouteTypes {
     | '/story'
     | '/urge'
     | '/wall'
+    | '/api/auth/$'
   id:
     | '__root__'
     | '/'
@@ -255,6 +277,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/journal'
     | '/log'
+    | '/login'
     | '/onboarding'
     | '/patterns'
     | '/people'
@@ -265,6 +288,7 @@ export interface FileRouteTypes {
     | '/story'
     | '/urge'
     | '/wall'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -278,6 +302,7 @@ export interface RootRouteChildren {
   InsightsRoute: typeof InsightsRoute
   JournalRoute: typeof JournalRoute
   LogRoute: typeof LogRoute
+  LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   PatternsRoute: typeof PatternsRoute
   PeopleRoute: typeof PeopleRoute
@@ -288,6 +313,7 @@ export interface RootRouteChildren {
   StoryRoute: typeof StoryRoute
   UrgeRoute: typeof UrgeRoute
   WallRoute: typeof WallRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -362,6 +388,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -432,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WallRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -446,6 +486,7 @@ const rootRouteChildren: RootRouteChildren = {
   InsightsRoute: InsightsRoute,
   JournalRoute: JournalRoute,
   LogRoute: LogRoute,
+  LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   PatternsRoute: PatternsRoute,
   PeopleRoute: PeopleRoute,
@@ -456,6 +497,7 @@ const rootRouteChildren: RootRouteChildren = {
   StoryRoute: StoryRoute,
   UrgeRoute: UrgeRoute,
   WallRoute: WallRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

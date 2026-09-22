@@ -44,8 +44,9 @@ interface AppState {
   saveStory: (story: Story) => void;
   setDisplayName: (name: string) => void;
   addTrigger: (label: string) => void;
-  hitTrigger: (id: string) => void;
+  moveTrigger: (id: string, direction: "up" | "down") => void;
   removeTrigger: (id: string) => void;
+  replaceTriggers: (labels: string[]) => void;
   addStandingGoal: (text: string) => void;
   toggleStandingGoal: (id: string) => void;
   removeStandingGoal: (id: string) => void;
@@ -81,6 +82,30 @@ const INITIAL = {
   displayName: "",
 };
 
+
+function migrateTriggers(raw: unknown): TriggerTag[] {
+  if (!Array.isArray(raw)) return [];
+  type Row = { id: string; label: string; rank?: number; hits?: number };
+  const rows: Row[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const t = item as Record<string, unknown>;
+    const label = typeof t.label === "string" ? t.label.trim() : "";
+    if (!label) continue;
+    rows.push({
+      id: typeof t.id === "string" ? t.id : uid(),
+      label,
+      rank: typeof t.rank === "number" ? t.rank : undefined,
+      hits: typeof t.hits === "number" ? t.hits : 0,
+    });
+  }
+  const hasRank = rows.some((r) => typeof r.rank === "number");
+  const sorted = hasRank
+    ? [...rows].sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999))
+    : [...rows].sort((a, b) => (b.hits ?? 0) - (a.hits ?? 0));
+  return sorted.slice(0, 24).map((t, i) => ({ id: t.id, label: t.label, rank: i }));
+}
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -90,21 +115,9 @@ export const useAppStore = create<AppState>()(
       savePlan: (plan) => set({ plan }),
       saveCheckin: (entry) => {
         const row: CheckIn = { ...entry, id: uid(), date: new Date().toISOString() };
-        const triggerLabel = entry.trigger.trim();
-        let triggers = get().triggers;
-        if (triggerLabel) {
-          const existing = triggers.find(
-            (t) => t.label.toLowerCase() === triggerLabel.toLowerCase(),
-          );
-          if (existing) {
-            triggers = triggers.map((t) =>
-              t.id === existing.id ? { ...t, hits: t.hits + 1, lastAt: row.date } : t,
-            );
-          }
-        }
+        // Trigger text stays on the check-in only — it does not change ranking.
         set({
           checkins: [row, ...get().checkins].slice(0, 90),
-          triggers,
         });
       },
       saveGoal: (text) => set({ goal: { text, date: todayKey() } }),
@@ -123,20 +136,44 @@ export const useAppStore = create<AppState>()(
         const clean = label.trim();
         if (!clean) return;
         if (get().triggers.some((t) => t.label.toLowerCase() === clean.toLowerCase())) return;
-        set({
-          triggers: [
-            { id: uid(), label: clean, hits: 0, lastAt: "" },
-            ...get().triggers,
-          ].slice(0, 24),
-        });
+        const next = [
+          ...get().triggers,
+          { id: uid(), label: clean, rank: get().triggers.length },
+        ].slice(0, 24);
+        set({ triggers: next.map((t, i) => ({ ...t, rank: i })) });
       },
-      hitTrigger: (id) =>
+      moveTrigger: (id, direction) => {
+        const list = [...get().triggers];
+        const i = list.findIndex((t) => t.id === id);
+        if (i < 0) return;
+        const j = direction === "up" ? i - 1 : i + 1;
+        if (j < 0 || j >= list.length) return;
+        const tmp = list[i]!;
+        list[i] = list[j]!;
+        list[j] = tmp;
+        set({ triggers: list.map((t, idx) => ({ ...t, rank: idx })) });
+      },
+      removeTrigger: (id) =>
         set({
-          triggers: get().triggers.map((t) =>
-            t.id === id ? { ...t, hits: t.hits + 1, lastAt: new Date().toISOString() } : t,
-          ),
+          triggers: get()
+            .triggers.filter((t) => t.id !== id)
+            .map((t, i) => ({ ...t, rank: i })),
         }),
-      removeTrigger: (id) => set({ triggers: get().triggers.filter((t) => t.id !== id) }),
+      replaceTriggers: (labels) => {
+        const seen = new Set<string>();
+        const next: TriggerTag[] = [];
+        for (const raw of labels) {
+          const clean = raw.trim();
+          if (!clean) continue;
+          const key = clean.toLowerCase();
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const existing = get().triggers.find((t) => t.label.toLowerCase() === key);
+          next.push({ id: existing?.id ?? uid(), label: clean, rank: next.length });
+          if (next.length >= 24) break;
+        }
+        set({ triggers: next.map((t, i) => ({ ...t, rank: i })) });
+      },
       addStandingGoal: (text) => {
         const clean = text.trim();
         if (!clean) return;
@@ -190,7 +227,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "sober-buddy",
-      version: 2,
+      version: 3,
       partialize: (s) => ({
         onboarded: s.onboarded,
         struggles: s.struggles,
@@ -208,6 +245,11 @@ export const useAppStore = create<AppState>()(
         amenedIds: s.amenedIds,
         displayName: s.displayName,
       }),
+      migrate: (persisted) => {
+        const p = (persisted ?? {}) as Record<string, unknown>;
+        p.triggers = migrateTriggers(p.triggers);
+        return p as never;
+      },
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;
         return {
@@ -220,7 +262,7 @@ export const useAppStore = create<AppState>()(
           checkins: p.checkins ?? [],
           wins: p.wins ?? [],
           chat: p.chat?.length ? p.chat : current.chat,
-          triggers: p.triggers ?? [],
+          triggers: migrateTriggers(p.triggers ?? []),
           standingGoals: p.standingGoals ?? [],
           slips: p.slips ?? [],
           localPrayers: p.localPrayers ?? [],
@@ -247,8 +289,8 @@ export function personalContext(s: {
   if (s.story.faith) bits.push(`Faith: ${s.story.faith.slice(0, 180)}`);
   if (s.story.protecting) bits.push(`They are protecting: ${s.story.protecting.slice(0, 160)}`);
   if (s.plan.reasons) bits.push(`Reasons: ${s.plan.reasons.slice(0, 220)}`);
-  const top = [...s.triggers].sort((a, b) => b.hits - a.hits).slice(0, 5);
-  if (top.length) bits.push(`Known triggers: ${top.map((t) => t.label).join(", ")}.`);
+  const top = [...s.triggers].sort((a, b) => a.rank - b.rank).slice(0, 5);
+  if (top.length) bits.push(`Known triggers (highest first): ${top.map((t) => t.label).join(", ")}.`);
   const open = s.standingGoals.filter((g) => !g.done).slice(0, 4);
   if (open.length) bits.push(`Goals: ${open.map((g) => g.text).join("; ")}`);
   if (s.goal.text) bits.push(`Today's goal: ${s.goal.text}`);

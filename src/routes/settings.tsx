@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { UserButton } from "@/lib/auth/gates";
 import { useAppStore } from "@/lib/store";
 import { useHasHydrated } from "@/lib/use-hydrated";
 
@@ -20,12 +21,25 @@ function Settings() {
 
   return (
     <AppFrame title="Settings">
+      <Card className="mb-4">
+        <CardContent className="flex items-center justify-between gap-3 p-4">
+          <div>
+            <p className="text-sm font-medium">Account</p>
+            <p className="text-xs text-muted-foreground">Sign out when you are done on a shared device.</p>
+          </div>
+          <UserButton />
+        </CardContent>
+      </Card>
+
       <div className="space-y-2">
         <Button asChild variant="outline" className="w-full justify-start">
           <Link to="/story">Your story</Link>
         </Button>
         <Button asChild variant="outline" className="w-full justify-start">
-          <Link to="/onboarding">Change my struggles</Link>
+          <Link to="/onboarding">Change setup (name, struggles, triggers)</Link>
+        </Button>
+        <Button asChild variant="outline" className="w-full justify-start">
+          <Link to="/patterns">Edit trigger ranking</Link>
         </Button>
         <Button asChild variant="outline" className="w-full justify-start">
           <Link to="/recovery">Edit recovery plan</Link>

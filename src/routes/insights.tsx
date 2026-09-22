@@ -28,8 +28,7 @@ function Insights() {
   const avg =
     series.length > 0 ? (series.reduce((a, b) => a + b, 0) / series.length).toFixed(1) : "—";
   const high = series.length ? Math.max(...series) : 0;
-  const ranked = [...triggers].sort((a, b) => b.hits - a.hits).slice(0, 6);
-  const maxHits = Math.max(1, ...ranked.map((t) => t.hits));
+  const ranked = [...triggers].sort((a, b) => a.rank - b.rank).slice(0, 6);
   const openGoals = standing.filter((g) => !g.done).length;
   const today = goal.date === todayKey() ? goal.text : "Not set";
 
@@ -80,19 +79,24 @@ function Insights() {
       </Card>
 
       <section className="mt-4">
-        <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">TRIGGER RANK</p>
+        <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">YOUR RANKING</p>
         <div className="mt-2 space-y-2">
           {ranked.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Tag triggers to rank them.</p>
+            <p className="text-sm text-muted-foreground">Write and rank triggers to see them here.</p>
           ) : (
-            ranked.map((t) => (
+            ranked.map((t, i) => (
               <div key={t.id}>
                 <div className="flex justify-between text-sm">
-                  <span>{t.label}</span>
-                  <span className="font-mono text-xs tabular-nums">{t.hits}</span>
+                  <span>
+                    <span className="mr-2 font-mono text-xs text-muted-foreground">#{i + 1}</span>
+                    {t.label}
+                  </span>
                 </div>
                 <div className="mt-1 h-1 overflow-hidden rounded-full bg-secondary">
-                  <div className="h-full bg-primary" style={{ width: `${(t.hits / maxHits) * 100}%` }} />
+                  <div
+                    className="h-full bg-primary"
+                    style={{ width: `${((ranked.length - i) / ranked.length) * 100}%` }}
+                  />
                 </div>
               </div>
             ))

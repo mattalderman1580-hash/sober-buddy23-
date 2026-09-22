@@ -21,8 +21,10 @@ import { AppFrame, LoadingScreen } from "@/components/app-frame";
 import { Sparkline } from "@/components/sparkline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { RedirectToSignIn } from "@/lib/auth/gates";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { orderLinks, personalize } from "@/lib/personalize";
 import { verseForDay } from "@/lib/scripture";
-import { labelsFor } from "@/lib/struggles";
 import { useAppStore } from "@/lib/store";
 import { useHasHydrated } from "@/lib/use-hydrated";
 import { daysSince, todayKey } from "@/lib/utils";
@@ -49,6 +51,7 @@ const LINKS = [
 
 function Home() {
   const hydrated = useHasHydrated();
+  const { user, isPending } = useCurrentUserState();
   const onboarded = useAppStore((s) => s.onboarded);
   const struggles = useAppStore((s) => s.struggles);
   const plan = useAppStore((s) => s.plan);
@@ -56,21 +59,31 @@ function Home() {
   const goal = useAppStore((s) => s.goal);
   const checkins = useAppStore((s) => s.checkins);
   const story = useAppStore((s) => s.story);
+  const displayName = useAppStore((s) => s.displayName);
   const recordWin = useAppStore((s) => s.recordWin);
 
-  if (!hydrated) return <LoadingScreen />;
-  if (!onboarded) return <Navigate to="/" />;
+  if (!hydrated || isPending) return <LoadingScreen />;
+  if (!user) return <RedirectToSignIn />;
+  if (!onboarded) return <Navigate to="/onboarding" />;
 
+  const persona = personalize(struggles);
+  const links = orderLinks(LINKS, persona.emphasize);
   const days = plan.startDate ? daysSince(plan.startDate) : null;
   const verse = verseForDay();
-  const labels = labelsFor(struggles);
   const goalToday = goal.date === todayKey() ? goal.text : "";
   const series = [...checkins].slice(0, 14).reverse().map((c) => c.urge);
   const avg =
     series.length > 0 ? (series.reduce((a, b) => a + b, 0) / series.length).toFixed(1) : "—";
+  const greeting = displayName || story.called;
 
   return (
     <AppFrame brand showSettings>
+      {greeting ? (
+        <p className="mb-3 text-sm text-muted-foreground">
+          Welcome back, <span className="text-foreground">{greeting}</span>
+        </p>
+      ) : null}
+
       <div className="grid grid-cols-3 gap-2">
         <Metric label="Days" value={days === null ? "—" : String(days)} />
         <Metric label="Chk-in" value={String(checkins.length)} />
@@ -80,13 +93,13 @@ function Home() {
       <Card className="mt-3">
         <CardContent className="p-4">
           <div className="mb-1 flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Urge · 14 samples</p>
-            <p className="text-xs tabular-nums text-muted-foreground">Avg {avg}</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+              {persona.primaryFocus}
+            </p>
+            <p className="text-xs tabular-nums text-muted-foreground">Avg urge {avg}</p>
           </div>
           <Sparkline values={series} />
-          <p className="mt-2 text-xs text-muted-foreground">
-            {labels.length ? labels.join(" · ") : "Select struggles to tailor support."}
-          </p>
+          <p className="mt-2 text-xs text-muted-foreground">{persona.homeSubtitle}</p>
         </CardContent>
       </Card>
 
@@ -95,31 +108,46 @@ function Home() {
           to="/story"
           className="mt-3 rounded-xl bg-secondary px-4 py-3 text-sm text-secondary-foreground"
         >
-          Story module empty. Fill it so Buddy can speak to your actual life.
+          {persona.empty.story}
         </Link>
       ) : null}
 
       <Button asChild variant="crisis" size="xl" className="mt-4 w-full font-semibold">
-        <Link to="/urge">I'm thinking about using</Link>
+        <Link to="/urge">{persona.crisisCta}</Link>
       </Button>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <Button asChild variant="secondary" className="h-11">
-          <Link to="/wall">Prayer circle</Link>
-        </Button>
-        <Button asChild variant="outline" className="h-11">
-          <Link to="/people">Send to people</Link>
-        </Button>
+        {persona.faithFirst ? (
+          <>
+            <Button asChild variant="secondary" className="h-11">
+              <Link to="/faith">God First</Link>
+            </Button>
+            <Button asChild variant="outline" className="h-11">
+              <Link to="/scripture">Scripture</Link>
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button asChild variant="secondary" className="h-11">
+              <Link to="/people">Reach people</Link>
+            </Button>
+            <Button asChild variant="outline" className="h-11">
+              <Link to="/help">Get help</Link>
+            </Button>
+          </>
+        )}
       </div>
 
       {goalToday ? (
         <p className="mt-3 text-center text-sm text-muted-foreground">
           Today · <span className="text-foreground">{goalToday}</span>
         </p>
-      ) : null}
+      ) : (
+        <p className="mt-3 text-center text-xs text-muted-foreground">{persona.empty.goals}</p>
+      )}
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        {LINKS.map(({ to, label, blurb, Icon }) => (
+        {links.map(({ to, label, blurb, Icon }) => (
           <Link
             key={to}
             to={to}
@@ -141,12 +169,12 @@ function Home() {
       </Card>
 
       <div className="mt-4 rounded-xl bg-card p-4 text-center shadow-border">
-        <p className="text-sm font-medium">Made it through an urge?</p>
+        <p className="text-sm font-medium">Made it through a hard moment?</p>
         <Button
           className="mt-3 w-full"
           onClick={() => {
             recordWin();
-            toast("Logged. One urge at a time. Keep God first.");
+            toast("Logged. One moment at a time. Keep God first.");
           }}
         >
           I made it through
@@ -159,7 +187,9 @@ function Home() {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-card px-2 py-3 text-center shadow-border">
-      <p className="font-display text-2xl font-medium tabular-nums leading-none tracking-tight">{value}</p>
+      <p className="font-display text-2xl font-medium tabular-nums leading-none tracking-tight">
+        {value}
+      </p>
       <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
     </div>
   );

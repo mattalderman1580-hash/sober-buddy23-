@@ -67,8 +67,8 @@ export interface Story {
 export interface TriggerTag {
   id: string;
   label: string;
-  hits: number;
-  lastAt: string;
+  /** 0 = highest priority. Array order stays in sync. */
+  rank: number;
 }
 
 export interface StandingGoal {

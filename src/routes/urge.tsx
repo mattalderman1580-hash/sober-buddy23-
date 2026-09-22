@@ -8,6 +8,7 @@ import { UrgeTimer } from "@/components/urge-timer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { askCompanion } from "@/lib/companion";
+import { personalize } from "@/lib/personalize";
 import { labelsFor } from "@/lib/struggles";
 import { personalContext, useAppStore } from "@/lib/store";
 import type { CompanionAction } from "@/lib/types";
@@ -91,7 +92,7 @@ function Urge() {
   return (
     <AppFrame title="Stay with me">
       <div className="mb-3 rounded-xl bg-muted px-4 py-3 text-sm leading-relaxed">
-        God first. Take a breath. Ask Jesus Christ for strength for this moment.
+        {personalize(struggles).urgeFraming}
         {story.called ? ` I'm with you, ${story.called}.` : null}
       </div>
 
