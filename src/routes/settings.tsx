@@ -1,10 +1,22 @@
 import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { Smartphone } from "lucide-react";
+import { Bell, Smartphone } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { UserButton } from "@/lib/auth/gates";
+import {
+  formatNotifyTime,
+  getNotificationPermission,
+  maybeShowDailyNotification,
+  notificationsSupported,
+  requestNotificationPermission,
+  type NotificationPermissionState,
+} from "@/lib/daily-notifications";
 import { useAppStore } from "@/lib/store";
 import { useHasHydrated } from "@/lib/use-hydrated";
 
@@ -14,10 +26,101 @@ function Settings() {
   const hydrated = useHasHydrated();
   const onboarded = useAppStore((s) => s.onboarded);
   const resetAll = useAppStore((s) => s.resetAll);
+  const enabled = useAppStore((s) => s.dailyEncouragementEnabled);
+  const hour = useAppStore((s) => s.dailyNotifyHour);
+  const minute = useAppStore((s) => s.dailyNotifyMinute);
+  const lastNotifyDate = useAppStore((s) => s.lastDailyNotifyDate);
+  const setDailyEncouragement = useAppStore((s) => s.setDailyEncouragement);
+  const setDailyNotifyTime = useAppStore((s) => s.setDailyNotifyTime);
+  const markDailyNotified = useAppStore((s) => s.markDailyNotified);
   const navigate = useNavigate();
+
+  const [permission, setPermission] = useState<NotificationPermissionState>("default");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    setPermission(getNotificationPermission());
+  }, [hydrated, enabled]);
 
   if (!hydrated) return <LoadingScreen />;
   if (!onboarded) return <Navigate to="/" />;
+
+  const supported = notificationsSupported();
+  const denied = permission === "denied";
+  const unsupported = permission === "unsupported" || !supported;
+  const timeValue = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+
+  async function onToggle(next: boolean) {
+    if (busy) return;
+    if (!next) {
+      setDailyEncouragement(false);
+      toast("Daily encouragement turned off.");
+      return;
+    }
+
+    if (unsupported) {
+      setDailyEncouragement(false);
+      toast("This browser does not support notifications.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const result = await requestNotificationPermission();
+      setPermission(result);
+      if (result !== "granted") {
+        setDailyEncouragement(false);
+        if (result === "denied") {
+          toast("Notifications blocked — enable them in your browser settings.");
+        } else {
+          toast("Permission needed to send daily reminders.");
+        }
+        return;
+      }
+      setDailyEncouragement(true);
+      toast(`Daily encouragement on — around ${formatNotifyTime(hour, minute)}.`);
+      // If we're already past the reminder time today, surface one now.
+      maybeShowDailyNotification({
+        enabled: true,
+        hour,
+        minute,
+        lastNotifyDate: useAppStore.getState().lastDailyNotifyDate,
+        onNotified: markDailyNotified,
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function onTimeChange(value: string) {
+    const match = /^(\d{1,2}):(\d{2})$/.exec(value);
+    if (!match) return;
+    const h = Number(match[1]);
+    const m = Number(match[2]);
+    if (Number.isNaN(h) || Number.isNaN(m)) return;
+    setDailyNotifyTime(h, m);
+  }
+
+  function sendTest() {
+    if (permission !== "granted") {
+      toast("Turn on daily encouragement first so permission is granted.");
+      return;
+    }
+    const result = maybeShowDailyNotification({
+      enabled: true,
+      hour,
+      minute,
+      lastNotifyDate,
+      onNotified: markDailyNotified,
+      force: true,
+    });
+    if (result.status === "shown") {
+      toast("Test encouragement sent.");
+    } else {
+      toast("Could not show a notification right now.");
+    }
+  }
 
   return (
     <AppFrame title="Settings">
@@ -28,6 +131,71 @@ function Settings() {
             <p className="text-xs text-muted-foreground">Sign out when you are done on a shared device.</p>
           </div>
           <UserButton />
+        </CardContent>
+      </Card>
+
+      <Card className="mb-4">
+        <CardContent className="space-y-4 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 space-y-1">
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <Bell className="size-4 shrink-0" />
+                Daily encouragement
+              </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                One day at a time — a gentle morning reminder to keep your head up, stay clean, and
+                celebrate this day.
+              </p>
+            </div>
+            <Switch
+              checked={enabled}
+              disabled={busy || unsupported}
+              onCheckedChange={(v) => void onToggle(v)}
+              aria-label="Daily encouragement"
+            />
+          </div>
+
+          {unsupported ? (
+            <p className="rounded-md bg-muted px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+              Notifications are not available in this browser. Try Chrome or Edge on your phone, or
+              add Sober Buddy to your home screen.
+            </p>
+          ) : null}
+
+          {denied ? (
+            <p className="rounded-md bg-muted px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+              Notifications are blocked. In your browser settings, allow notifications for this site,
+              then turn the toggle back on. On Chrome: lock icon or site settings → Notifications →
+              Allow.
+            </p>
+          ) : null}
+
+          {enabled && !denied && !unsupported ? (
+            <div className="space-y-3 border-t border-border pt-3">
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="daily-notify-time">Reminder time</Label>
+                  <Input
+                    id="daily-notify-time"
+                    type="time"
+                    value={timeValue}
+                    onChange={(e) => onTimeChange(e.target.value)}
+                    className="w-[9.5rem]"
+                  />
+                </div>
+                <p className="pb-2 text-xs text-muted-foreground">
+                  Local time · defaults to {formatNotifyTime(8, 0)}
+                </p>
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Reminder fires the next time you open or return to the app after that time (no
+                push server). Keep the tab or home-screen app handy.
+              </p>
+              <Button type="button" variant="outline" size="sm" onClick={sendTest}>
+                Send a test encouragement
+              </Button>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

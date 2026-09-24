@@ -1,6 +1,7 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth/provider";
+import { DailyNotificationWatcher } from "@/components/daily-notification-watcher";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import appCss from "../styles.css?url";
 
@@ -43,6 +44,7 @@ function Root() {
       <body>
         <PreviewHostBridge />
         <AuthProvider>
+          <DailyNotificationWatcher />
           <Outlet />
         </AuthProvider>
         <Toaster

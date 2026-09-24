@@ -15,6 +15,10 @@ import type {
   UrgeWin,
 } from "@/lib/types";
 import { EMPTY_PLAN, EMPTY_STORY } from "@/lib/types";
+import {
+  DEFAULT_NOTIFY_HOUR,
+  DEFAULT_NOTIFY_MINUTE,
+} from "@/lib/daily-notifications";
 import { todayKey, uid } from "@/lib/utils";
 
 interface AppState {
@@ -33,6 +37,10 @@ interface AppState {
   journal: JournalEntry[];
   amenedIds: number[];
   displayName: string;
+  dailyEncouragementEnabled: boolean;
+  dailyNotifyHour: number;
+  dailyNotifyMinute: number;
+  lastDailyNotifyDate: string;
   setStruggles: (ids: StruggleId[]) => void;
   finishOnboarding: (ids: StruggleId[]) => void;
   savePlan: (plan: RecoveryPlan) => void;
@@ -54,6 +62,9 @@ interface AppState {
   addLocalPrayer: (body: string) => void;
   addJournal: (body: string) => void;
   markAmen: (postId: number) => void;
+  setDailyEncouragement: (enabled: boolean) => void;
+  setDailyNotifyTime: (hour: number, minute: number) => void;
+  markDailyNotified: (dateKey: string) => void;
   resetAll: () => void;
 }
 
@@ -80,6 +91,10 @@ const INITIAL = {
   journal: [] as JournalEntry[],
   amenedIds: [] as number[],
   displayName: "",
+  dailyEncouragementEnabled: false,
+  dailyNotifyHour: DEFAULT_NOTIFY_HOUR,
+  dailyNotifyMinute: DEFAULT_NOTIFY_MINUTE,
+  lastDailyNotifyDate: "",
 };
 
 
@@ -223,11 +238,18 @@ export const useAppStore = create<AppState>()(
         if (get().amenedIds.includes(postId)) return;
         set({ amenedIds: [...get().amenedIds, postId].slice(-200) });
       },
+      setDailyEncouragement: (enabled) => set({ dailyEncouragementEnabled: enabled }),
+      setDailyNotifyTime: (hour, minute) =>
+        set({
+          dailyNotifyHour: Math.min(23, Math.max(0, Math.floor(hour))),
+          dailyNotifyMinute: Math.min(59, Math.max(0, Math.floor(minute))),
+        }),
+      markDailyNotified: (dateKey) => set({ lastDailyNotifyDate: dateKey }),
       resetAll: () => set({ ...INITIAL, chat: [OPENING] }),
     }),
     {
       name: "sober-buddy",
-      version: 3,
+      version: 4,
       partialize: (s) => ({
         onboarded: s.onboarded,
         struggles: s.struggles,
@@ -244,6 +266,10 @@ export const useAppStore = create<AppState>()(
         journal: s.journal,
         amenedIds: s.amenedIds,
         displayName: s.displayName,
+        dailyEncouragementEnabled: s.dailyEncouragementEnabled,
+        dailyNotifyHour: s.dailyNotifyHour,
+        dailyNotifyMinute: s.dailyNotifyMinute,
+        lastDailyNotifyDate: s.lastDailyNotifyDate,
       }),
       migrate: (persisted) => {
         const p = (persisted ?? {}) as Record<string, unknown>;
@@ -269,6 +295,14 @@ export const useAppStore = create<AppState>()(
           journal: p.journal ?? [],
           amenedIds: p.amenedIds ?? [],
           displayName: p.displayName ?? "",
+          dailyEncouragementEnabled: p.dailyEncouragementEnabled ?? false,
+          dailyNotifyHour:
+            typeof p.dailyNotifyHour === "number" ? p.dailyNotifyHour : DEFAULT_NOTIFY_HOUR,
+          dailyNotifyMinute:
+            typeof p.dailyNotifyMinute === "number"
+              ? p.dailyNotifyMinute
+              : DEFAULT_NOTIFY_MINUTE,
+          lastDailyNotifyDate: p.lastDailyNotifyDate ?? "",
         };
       },
     },
