@@ -1,7 +1,8 @@
 import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { Bell, Smartphone } from "lucide-react";
+import { Bell, LifeBuoy, Shield, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { AI_PAYLOAD_BLURB } from "@/components/ai-disclosure";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { UserButton } from "@/lib/auth/gates";
+import { COMPANION_SENT_SUMMARY } from "@/lib/companion";
 import {
   formatNotifyTime,
   getNotificationPermission,
@@ -26,6 +28,8 @@ function Settings() {
   const hydrated = useHasHydrated();
   const onboarded = useAppStore((s) => s.onboarded);
   const resetAll = useAppStore((s) => s.resetAll);
+  const resetChat = useAppStore((s) => s.resetChat);
+  const clearCheckins = useAppStore((s) => s.clearCheckins);
   const enabled = useAppStore((s) => s.dailyEncouragementEnabled);
   const hour = useAppStore((s) => s.dailyNotifyHour);
   const minute = useAppStore((s) => s.dailyNotifyMinute);
@@ -199,6 +203,74 @@ function Settings() {
         </CardContent>
       </Card>
 
+      <Card className="mb-4 border-crisis/20">
+        <CardContent className="space-y-3 p-4">
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <LifeBuoy className="size-4 shrink-0 text-crisis" />
+            Get help now · Talk to a real person
+          </p>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            In an emergency, call local emergency services (911 in the U.S.). Sober Buddy does not
+            provide therapy or crisis counseling.
+          </p>
+          <div className="flex flex-col gap-2">
+            <Button asChild variant="crisis" className="w-full">
+              <a href="tel:911">Call 911 — emergency</a>
+            </Button>
+            <Button asChild className="w-full">
+              <a href="tel:988">Call 988 — Suicide &amp; Crisis Lifeline</a>
+            </Button>
+            <Button asChild variant="secondary" className="w-full">
+              <a href="sms:988">Text 988</a>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <a href="tel:18006624357">SAMHSA 1-800-662-HELP (4357)</a>
+            </Button>
+            <Button asChild variant="ghost" className="w-full justify-start">
+              <Link to="/help">More options &amp; your saved contacts</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-4">
+        <CardContent className="space-y-3 p-4">
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <Shield className="size-4 shrink-0" />
+            Privacy &amp; AI
+          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Sober Buddy&apos;s AI is a support tool, not a therapist, sponsor, clergy, doctor, or
+            emergency service. It does not replace professional care, a recovery fellowship, or
+            people who know you. If you are in danger, reach a real person and local emergency
+            services.
+          </p>
+          <p className="text-xs font-medium text-foreground">What we store on this device</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Your story, check-ins, triggers, recovery plan, slips, journal, local prayers, goals,
+            wins, and notification preferences stay in this browser&apos;s local storage. Urge AI
+            chat is kept only for the current session and is not saved long-term. Account sign-in
+            uses your auth provider. The prayer circle is a public board (first names / handles you
+            choose) stored on the server when you post.
+          </p>
+          <p className="text-xs font-medium text-foreground">What is sent to a model (when AI is on)</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {COMPANION_SENT_SUMMARY.whenConfigured}
+          </p>
+          <ul className="list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
+            {AI_PAYLOAD_BLURB.sent.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+          <p className="text-xs font-medium text-foreground">Not sent</p>
+          <ul className="list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
+            {AI_PAYLOAD_BLURB.notSent.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
       <div className="space-y-2">
         <Button asChild variant="outline" className="w-full justify-start">
           <Link to="/story">Your story</Link>
@@ -214,6 +286,26 @@ function Settings() {
         </Button>
         <Button asChild variant="outline" className="w-full justify-start">
           <Link to="/wall">Prayer circle</Link>
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full justify-start"
+          onClick={() => {
+            resetChat();
+            toast("Urge chat cleared for this session.");
+          }}
+        >
+          Clear Urge AI chat
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full justify-start"
+          onClick={() => {
+            clearCheckins();
+            toast("Check-in history cleared.");
+          }}
+        >
+          Clear check-in history
         </Button>
         <Button
           variant="outline"
@@ -240,12 +332,6 @@ function Settings() {
           </p>
         </CardContent>
       </Card>
-
-      <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-        Your story, check-ins, and recovery plan stay on this device. The prayer circle is a public
-        board — first names only. This companion is not medical care, therapy, or emergency
-        response.
-      </p>
     </AppFrame>
   );
 }

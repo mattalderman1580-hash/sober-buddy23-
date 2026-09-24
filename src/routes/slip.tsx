@@ -1,7 +1,9 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
+import { AiDisclosure } from "@/components/ai-disclosure";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
+import { NeedHelpNow } from "@/components/need-help-now";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -56,6 +58,8 @@ function SlipPage() {
 
   return (
     <AppFrame title="After a slip">
+      <AiDisclosure className="mb-3" />
+      <NeedHelpNow variant="banner" className="mb-3" />
       <Card className="bg-muted">
         <CardContent className="space-y-1 p-5 text-sm leading-relaxed">
           <p className="font-medium">A slip is data, not a verdict.</p>
@@ -105,6 +109,10 @@ function SlipPage() {
         <Button variant="secondary" className="w-full" disabled={busy} onClick={() => void processWithBuddy()}>
           {busy ? "Working…" : "Process with Buddy"}
         </Button>
+        <p className="text-xs text-muted-foreground">
+          Buddy uses only what you typed above plus a short profile snippet — not your journal or
+          prayer notes. AI is a tool, not therapy.
+        </p>
         {note ? (
           <p className="rounded-xl bg-muted px-4 py-3 text-sm leading-relaxed">{note}</p>
         ) : null}

@@ -51,17 +51,23 @@ function Help() {
           <a href="tel:911">Call 911 — emergency</a>
         </Button>
         <Button asChild size="lg" className="w-full">
-          <a href="tel:988">Call or text 988 — crisis line</a>
+          <a href="tel:988">Call 988 — Suicide &amp; Crisis Lifeline</a>
         </Button>
         <Button asChild variant="secondary" size="lg" className="w-full">
-          <a href="tel:18006624357">SAMHSA helpline 1-800-662-HELP</a>
+          <a href="sms:988">Text 988</a>
+        </Button>
+        <Button asChild variant="secondary" size="lg" className="w-full">
+          <a href="tel:18006624357">SAMHSA helpline 1-800-662-HELP (4357)</a>
         </Button>
       </div>
 
       <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
         If you are in immediate physical danger, call <strong className="text-foreground">911</strong>.
-        In the U.S., call or text <strong className="text-foreground">988</strong> for the Suicide &
-        Crisis Lifeline. Save people you trust in My Recovery so they appear here.
+        In the U.S., call or text <strong className="text-foreground">988</strong> for the Suicide &amp;
+        Crisis Lifeline. SAMHSA can help you find treatment and support. These resources are for
+        crisis and finding help — the app does not provide therapy. Sober Buddy&apos;s AI is a
+        support tool, not a crisis line. Save people you trust in your recovery plan so they appear
+        here.
       </p>
     </AppFrame>
   );

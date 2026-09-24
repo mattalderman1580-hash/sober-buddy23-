@@ -14,7 +14,7 @@ const ActionSchema = z.enum([
 
 const InputSchema = z.object({
   struggles: z.array(z.string()).max(12),
-  profile: z.string().max(1400),
+  profile: z.string().max(500),
   action: ActionSchema,
   message: z.string().max(800).optional(),
   history: z
@@ -28,12 +28,12 @@ const InputSchema = z.object({
 });
 
 const ACTION_PROMPTS: Record<CompanionAction, string> = {
-  talk: "The person wants to talk. Invite them to share what is happening. Listen first. Ask one gentle question. Use their story and triggers if useful.",
+  talk: "The person wants to talk. Invite them to share what is happening. Listen first. Ask one gentle question. Use their profile snippet only if it helps.",
   calm: "Help them slow down. Guide a simple breathing pause: feet on the floor, inhale slowly, longer exhale. Stay with them for the next minute.",
   distract:
-    "Give two or three concrete, safe distractions for the next 10 minutes (water, a short walk, a trusted call, a simple chore). No shame. Prefer ideas that fit their stated good day and goals.",
+    "Give two or three concrete, safe distractions for the next 10 minutes (water, a short walk, a trusted call, a simple chore). No shame. Prefer ideas that fit their triggers or today's goal if mentioned.",
   reasons:
-    "Remind them what they are protecting using THEIR reasons, people, and story. Be specific, not generic.",
+    "Remind them what they are protecting using THEIR protecting/reasons line if present. Be specific, not generic.",
   pray: "Pray with them out loud as a prayer they can speak. Address God the Father and Jesus Christ. Keep it short and earnest. Weave in what they said they are protecting if present.",
   scripture:
     "Share one short KJV verse that fits this moment, quote it clearly with the reference, then one sentence on the next right step.",
@@ -52,6 +52,23 @@ export const FALLBACKS: Record<CompanionAction, string> = {
     'Philippians 4:13 (KJV): "I can do all things through Christ which strengtheneth me." Take the next right step with Him.',
   free: "I'm still with you. Take one slow breath. You can get through the next few minutes. What would the next right step look like?",
 };
+
+/** Plain-language summary of the askCompanion request body (for Settings / Privacy). */
+export const COMPANION_SENT_SUMMARY = {
+  whenConfigured:
+    "If AI is configured, your request goes through our server to the model provider. If not, you still see local support replies and nothing is sent to a model.",
+  included: [
+    "The action you chose or the message you typed",
+    "Struggle category labels from setup",
+    "A short profile snippet (name, what you protect, up to 3 triggers, today's goal)",
+    "Up to 8 recent Urge chat turns from this browser session",
+  ],
+  neverIncluded: [
+    "Journal and private prayer notes",
+    "Contact phone numbers and recovery-plan contact block",
+    "Full story / faith text, full trigger list, standing goals, check-ins, and prior slips (unless you type them into After a slip)",
+  ],
+} as const;
 
 const SYSTEM = `You are Sober Buddy, a Christian recovery companion. God the Father, and Jesus Christ our Lord and Savior, come first.
 

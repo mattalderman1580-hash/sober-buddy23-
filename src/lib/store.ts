@@ -49,6 +49,7 @@ interface AppState {
   recordWin: () => void;
   addChat: (msg: Omit<ChatMessage, "id">) => void;
   resetChat: () => void;
+  clearCheckins: () => void;
   saveStory: (story: Story) => void;
   setDisplayName: (name: string) => void;
   addTrigger: (label: string) => void;
@@ -145,6 +146,7 @@ export const useAppStore = create<AppState>()(
           chat: [...get().chat, { ...msg, id: uid() }].slice(-40),
         }),
       resetChat: () => set({ chat: [{ ...OPENING, id: uid() }] }),
+      clearCheckins: () => set({ checkins: [] }),
       saveStory: (story) => set({ story }),
       setDisplayName: (name) => set({ displayName: name }),
       addTrigger: (label) => {
@@ -249,7 +251,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "sober-buddy",
-      version: 4,
+      version: 5,
       partialize: (s) => ({
         onboarded: s.onboarded,
         struggles: s.struggles,
@@ -257,7 +259,7 @@ export const useAppStore = create<AppState>()(
         checkins: s.checkins,
         goal: s.goal,
         wins: s.wins,
-        chat: s.chat,
+        // chat intentionally omitted — AI transcripts stay session-only
         story: s.story,
         triggers: s.triggers,
         standingGoals: s.standingGoals,
@@ -287,7 +289,8 @@ export const useAppStore = create<AppState>()(
           struggles: p.struggles ?? [],
           checkins: p.checkins ?? [],
           wins: p.wins ?? [],
-          chat: p.chat?.length ? p.chat : current.chat,
+          // Prefer session chat; drop any legacy persisted transcripts
+          chat: current.chat,
           triggers: migrateTriggers(p.triggers ?? []),
           standingGoals: p.standingGoals ?? [],
           slips: p.slips ?? [],
@@ -317,17 +320,27 @@ export function personalContext(s: {
   slips: Slip[];
   goal: DailyGoal;
 }): string {
+  // Minimum needed for a helpful reply — no journal, prayers, contacts, full story, or slip history.
   const bits: string[] = [];
   if (s.story.called) bits.push(`They go by ${s.story.called}.`);
-  if (s.story.narrative) bits.push(`Their story: ${s.story.narrative.slice(0, 280)}`);
-  if (s.story.faith) bits.push(`Faith: ${s.story.faith.slice(0, 180)}`);
-  if (s.story.protecting) bits.push(`They are protecting: ${s.story.protecting.slice(0, 160)}`);
-  if (s.plan.reasons) bits.push(`Reasons: ${s.plan.reasons.slice(0, 220)}`);
-  const top = [...s.triggers].sort((a, b) => a.rank - b.rank).slice(0, 5);
-  if (top.length) bits.push(`Known triggers (highest first): ${top.map((t) => t.label).join(", ")}.`);
-  const open = s.standingGoals.filter((g) => !g.done).slice(0, 4);
-  if (open.length) bits.push(`Goals: ${open.map((g) => g.text).join("; ")}`);
-  if (s.goal.text) bits.push(`Today's goal: ${s.goal.text}`);
-  if (s.slips[0]?.learned) bits.push(`Last lesson from a slip: ${s.slips[0].learned.slice(0, 160)}`);
+  if (s.story.protecting) {
+    bits.push(`They are protecting: ${s.story.protecting.slice(0, 120)}`);
+  } else if (s.plan.reasons) {
+    // Fallback only when protecting is empty
+    bits.push(`Reasons: ${s.plan.reasons.slice(0, 120)}`);
+  }
+  const top = [...s.triggers].sort((a, b) => a.rank - b.rank).slice(0, 3);
+  if (top.length) {
+    bits.push(`Top triggers: ${top.map((t) => t.label).join(", ")}.`);
+  }
+  if (s.goal.text) bits.push(`Today's goal: ${s.goal.text.slice(0, 80)}`);
   return bits.join(" ");
 }
+
+/** Human-readable list of fields included in personalContext (for Privacy UI). */
+export const COMPANION_PROFILE_FIELDS = [
+  "preferred name (if set)",
+  "what you are protecting (short), or reasons if protecting is empty",
+  "up to 3 highest-ranked triggers (labels only)",
+  "today's goal (short, if set)",
+] as const;

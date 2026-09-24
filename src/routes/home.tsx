@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
+import { NeedHelpNow } from "@/components/need-help-now";
 import { Sparkline } from "@/components/sparkline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -115,6 +116,8 @@ function Home() {
       <Button asChild variant="crisis" size="xl" className="mt-4 w-full font-semibold">
         <Link to="/urge">{persona.crisisCta}</Link>
       </Button>
+
+      <NeedHelpNow variant="banner" className="mt-3" />
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         {persona.faithFirst ? (

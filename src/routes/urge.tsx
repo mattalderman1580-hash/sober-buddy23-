@@ -1,7 +1,9 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { BookOpen, HandHelping, Heart, MessageCircle, Phone, Waves, Wind } from "lucide-react";
 import { useRef, useState } from "react";
+import { AiDisclosure } from "@/components/ai-disclosure";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
+import { NeedHelpNow } from "@/components/need-help-now";
 import { Breathing } from "@/components/breathing";
 import { SpeakButton } from "@/components/speak-button";
 import { UrgeTimer } from "@/components/urge-timer";
@@ -95,6 +97,9 @@ function Urge() {
         {personalize(struggles).urgeFraming}
         {story.called ? ` I'm with you, ${story.called}.` : null}
       </div>
+
+      <AiDisclosure className="mb-3" />
+      <NeedHelpNow variant="banner" className="mb-3" />
 
       <div ref={listRef} className="flex min-h-40 flex-col gap-2.5">
         {chat.map((m) => (
