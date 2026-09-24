@@ -37,6 +37,12 @@ export interface RecoveryPlan {
   goals: string;
 }
 
+/** Minimal sponsor record: just who to call or text in a hard moment. */
+export interface Sponsor {
+  name: string;
+  phone: string;
+}
+
 export interface CheckIn {
   id: string;
   date: string;

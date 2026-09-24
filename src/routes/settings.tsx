@@ -1,9 +1,19 @@
 import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { Bell, LifeBuoy, Shield, Smartphone } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Bell, Download, HardDriveDownload, LifeBuoy, Shield, Smartphone, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AI_PAYLOAD_BLURB } from "@/components/ai-disclosure";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,7 +29,8 @@ import {
   requestNotificationPermission,
   type NotificationPermissionState,
 } from "@/lib/daily-notifications";
-import { useAppStore } from "@/lib/store";
+import { backupFileName, buildBackup, parseBackup } from "@/lib/backup";
+import { exportableState, STORE_VERSION, useAppStore } from "@/lib/store";
 import { useHasHydrated } from "@/lib/use-hydrated";
 
 export const Route = createFileRoute("/settings")({ component: Settings });
@@ -233,6 +244,8 @@ function Settings() {
         </CardContent>
       </Card>
 
+      <BackupCard />
+
       <Card className="mb-4">
         <CardContent className="space-y-3 p-4">
           <p className="flex items-center gap-2 text-sm font-medium">
@@ -248,8 +261,10 @@ function Settings() {
           <p className="text-xs font-medium text-foreground">What we store on this device</p>
           <p className="text-xs leading-relaxed text-muted-foreground">
             Your story, check-ins, triggers, recovery plan, slips, journal, local prayers, goals,
-            wins, and notification preferences stay in this browser&apos;s local storage. Urge AI
-            chat is kept only for the current session and is not saved long-term. Account sign-in
+            wins, sponsor, milestones, and notification preferences stay in this browser&apos;s
+            local storage. They only leave this device if you download a backup file yourself
+            (see &quot;Back up your data&quot;). Urge AI chat is kept only for the current session
+            and is not saved long-term or included in backups. Account sign-in
             uses your auth provider. The prayer circle is a public board (first names / handles you
             choose) stored on the server when you post.
           </p>
@@ -333,5 +348,132 @@ function Settings() {
         </CardContent>
       </Card>
     </AppFrame>
+  );
+}
+
+type PendingRestore = { data: Record<string, unknown>; version: number; exportedAt: string };
+
+function BackupCard() {
+  const restoreBackup = useAppStore((s) => s.restoreBackup);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [pending, setPending] = useState<PendingRestore | null>(null);
+
+  function download() {
+    try {
+      const file = buildBackup(exportableState(), STORE_VERSION);
+      const blob = new Blob([JSON.stringify(file, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = backupFileName();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast("Backup downloaded. Keep it somewhere safe and private.");
+    } catch {
+      toast("Could not create a backup in this browser.");
+    }
+  }
+
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 5_000_000) {
+      toast("That file is too large to be a Sober Buddy backup.");
+      return;
+    }
+    let text = "";
+    try {
+      text = await file.text();
+    } catch {
+      toast("Could not read that file.");
+      return;
+    }
+    const parsed = parseBackup(text, STORE_VERSION);
+    if (!parsed.ok) {
+      toast(parsed.error);
+      return;
+    }
+    setPending({ data: parsed.data, version: parsed.version, exportedAt: parsed.exportedAt });
+  }
+
+  function confirmRestore() {
+    if (!pending) return;
+    try {
+      restoreBackup(pending.data, pending.version);
+      toast.success("Your data is restored. Welcome back.");
+    } catch {
+      toast("Could not restore that backup. Nothing was changed.");
+    } finally {
+      setPending(null);
+    }
+  }
+
+  const exportedLabel = (() => {
+    if (!pending?.exportedAt) return "";
+    const d = new Date(pending.exportedAt);
+    return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString();
+  })();
+
+  return (
+    <Card className="mb-4">
+      <CardContent className="space-y-3 p-4">
+        <p className="flex items-center gap-2 text-sm font-medium">
+          <HardDriveDownload className="size-4 shrink-0" />
+          Back up your data
+        </p>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          Everything you&apos;ve written lives only in this browser. Download a backup before you
+          switch phones or clear your browser, then restore it on the new device.
+        </p>
+        <p className="rounded-md bg-muted px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+          The backup file holds your private recovery notes: journal, story, slips, check-ins,
+          prayers, and contacts. Store it somewhere safe. Nothing is uploaded anywhere; the file
+          is created and read right here on your device.
+        </p>
+        <div className="flex flex-col gap-2">
+          <Button type="button" variant="outline" className="w-full justify-start" onClick={download}>
+            <Download className="size-4" />
+            Download a backup
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => fileRef.current?.click()}
+          >
+            <Upload className="size-4" />
+            Restore from a backup
+          </Button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => void onFile(e)}
+          />
+        </div>
+      </CardContent>
+
+      <AlertDialog open={pending !== null} onOpenChange={(open) => !open && setPending(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace what&apos;s on this device?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Restoring {exportedLabel ? `the backup from ${exportedLabel}` : "this backup"} will
+              replace your current journal, plan, check-ins, and everything else saved in Sober
+              Buddy on this device. This can&apos;t be undone, so download a backup of this device
+              first if you might need it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep what I have</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRestore}>Restore backup</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
   );
 }

@@ -19,6 +19,8 @@ function People() {
   const story = useAppStore((s) => s.story);
   const contacts = parseContacts(useAppStore((s) => s.plan.contacts));
   const name = useAppStore((s) => s.displayName) || story.called || "me";
+  const sponsor = useAppStore((s) => s.sponsor);
+  const setSponsor = useAppStore((s) => s.setSponsor);
   const [mode, setMode] = useState<"request" | "encourage">("request");
   const [body, setBody] = useState(REQUEST_TEMPLATES[0]!);
 
@@ -30,6 +32,12 @@ function People() {
     mode === "request"
       ? `It's ${name}. ${body}`
       : `From ${name} via Sober Buddy:\n\n${body}`;
+
+  function isSponsor(c: { name: string; phone: string }) {
+    if (!sponsor) return false;
+    const d = (v: string) => v.replace(/\D/g, "");
+    return sponsor.name === c.name && d(sponsor.phone) === d(c.phone);
+  }
 
   function share() {
     if (typeof navigator !== "undefined" && navigator.share) {
@@ -133,8 +141,27 @@ function People() {
                 className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{c.name}</p>
+                  <p className="truncate text-sm font-medium">
+                    {c.name}
+                    {isSponsor(c) ? (
+                      <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 font-mono text-[9px] tracking-[0.12em] text-secondary-foreground">
+                        SPONSOR
+                      </span>
+                    ) : null}
+                  </p>
                   <p className="font-mono text-[11px] text-muted-foreground">{c.phone}</p>
+                  {!isSponsor(c) ? (
+                    <button
+                      type="button"
+                      className="mt-0.5 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                      onClick={() => {
+                        setSponsor({ name: c.name, phone: c.phone });
+                        toast(`${c.name} is now your sponsor.`);
+                      }}
+                    >
+                      Make my sponsor
+                    </button>
+                  ) : null}
                 </div>
                 <Button asChild size="sm">
                   <a href={`sms:${c.phone.replace(/[^\d+]/g, "")}?body=${encodeURIComponent(payload)}`}>

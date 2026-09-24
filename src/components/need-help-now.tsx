@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { LifeBuoy, Phone, X } from "lucide-react";
 import { useState } from "react";
+import { SponsorCall } from "@/components/sponsor-call";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -96,6 +97,7 @@ export function NeedHelpNow({
             </div>
 
             <div className="space-y-2">
+              <SponsorCall size="default" />
               <Button asChild variant="crisis" size="lg" className="w-full">
                 <a href="tel:911">
                   <Phone className="size-4" />

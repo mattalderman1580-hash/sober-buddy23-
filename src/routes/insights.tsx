@@ -3,6 +3,7 @@ import { AppFrame, LoadingScreen } from "@/components/app-frame";
 import { Sparkline } from "@/components/sparkline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { daysSinceLastSlip, reachedMilestones } from "@/lib/milestones";
 import { useAppStore } from "@/lib/store";
 import { useHasHydrated } from "@/lib/use-hydrated";
 import { daysSince, todayKey } from "@/lib/utils";
@@ -24,6 +25,8 @@ function Insights() {
   if (!onboarded) return <Navigate to="/" />;
 
   const days = plan.startDate ? daysSince(plan.startDate) : null;
+  const sinceSlip = daysSinceLastSlip(plan.startDate, slips);
+  const reached = reachedMilestones(plan.startDate).reverse();
   const series = [...checkins].slice(0, 21).reverse().map((c) => c.urge);
   const avg =
     series.length > 0 ? (series.reduce((a, b) => a + b, 0) / series.length).toFixed(1) : "—";
@@ -48,7 +51,8 @@ function Insights() {
       </p>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <Stat k="Streak days" v={days === null ? "—" : String(days)} />
+        <Stat k="Days since start" v={days === null ? "—" : String(days)} />
+        {sinceSlip !== null ? <Stat k="Since last slip" v={String(sinceSlip)} /> : null}
         <Stat k="Mean urge" v={String(avg)} />
         <Stat k="Peak urge" v={String(high)} />
         <Stat k="Wins" v={String(wins.length)} />
@@ -70,6 +74,27 @@ function Insights() {
           <p className="text-xs text-muted-foreground">Based on check-ins with urge 6 or higher.</p>
         </CardContent>
       </Card>
+
+      {reached.length ? (
+        <Card className="mt-3">
+          <CardContent className="space-y-2 p-4">
+            <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">
+              MILESTONES REACHED
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {reached.map((m) => (
+                <span
+                  key={m.key}
+                  className="rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground"
+                  title={m.date.toLocaleDateString()}
+                >
+                  {m.label}
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="mt-3">
         <CardContent className="space-y-1 p-4">

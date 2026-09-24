@@ -8,6 +8,7 @@ import type {
   LocalPrayer,
   RecoveryPlan,
   Slip,
+  Sponsor,
   StandingGoal,
   Story,
   StruggleId,
@@ -20,6 +21,9 @@ import {
   DEFAULT_NOTIFY_MINUTE,
 } from "@/lib/daily-notifications";
 import { todayKey, uid } from "@/lib/utils";
+
+/** Persisted store version. Bump when the persisted shape changes. */
+export const STORE_VERSION = 6;
 
 interface AppState {
   onboarded: boolean;
@@ -41,6 +45,10 @@ interface AppState {
   dailyNotifyHour: number;
   dailyNotifyMinute: number;
   lastDailyNotifyDate: string;
+  /** The one person marked as sponsor (null when not set). */
+  sponsor: Sponsor | null;
+  /** Milestone keys already celebrated (see src/lib/milestones.ts). */
+  celebratedMilestones: string[];
   setStruggles: (ids: StruggleId[]) => void;
   finishOnboarding: (ids: StruggleId[]) => void;
   savePlan: (plan: RecoveryPlan) => void;
@@ -66,6 +74,10 @@ interface AppState {
   setDailyEncouragement: (enabled: boolean) => void;
   setDailyNotifyTime: (hour: number, minute: number) => void;
   markDailyNotified: (dateKey: string) => void;
+  setSponsor: (sponsor: Sponsor | null) => void;
+  markMilestonesCelebrated: (keys: string[]) => void;
+  /** Replace all persisted data with a validated backup (runs migrate + merge). */
+  restoreBackup: (data: Record<string, unknown>, version: number) => void;
   resetAll: () => void;
 }
 
@@ -96,6 +108,8 @@ const INITIAL = {
   dailyNotifyHour: DEFAULT_NOTIFY_HOUR,
   dailyNotifyMinute: DEFAULT_NOTIFY_MINUTE,
   lastDailyNotifyDate: "",
+  sponsor: null as Sponsor | null,
+  celebratedMilestones: [] as string[],
 };
 
 
@@ -120,6 +134,108 @@ function migrateTriggers(raw: unknown): TriggerTag[] {
     ? [...rows].sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999))
     : [...rows].sort((a, b) => (b.hits ?? 0) - (a.hits ?? 0));
   return sorted.slice(0, 24).map((t, i) => ({ id: t.id, label: t.label, rank: i }));
+}
+
+function stringFields<T extends object>(defaults: T, raw: unknown): T {
+  const out = { ...defaults } as Record<string, unknown>;
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (k in out && typeof v === "string") out[k] = v;
+    }
+  }
+  return out as T;
+}
+
+function migrateSponsor(raw: unknown): Sponsor | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const r = raw as Record<string, unknown>;
+  const name = typeof r.name === "string" ? r.name.trim().slice(0, 60) : "";
+  const phone = typeof r.phone === "string" ? r.phone.trim().slice(0, 32) : "";
+  if (!name && !phone) return null;
+  return { name: name || "Sponsor", phone };
+}
+
+function arr<T>(raw: unknown): T[] {
+  return Array.isArray(raw) ? (raw as T[]) : [];
+}
+
+/** Persisted data fields only (no functions, no session chat). */
+function partializeState(s: AppState) {
+  return {
+    onboarded: s.onboarded,
+    struggles: s.struggles,
+    plan: s.plan,
+    checkins: s.checkins,
+    goal: s.goal,
+    wins: s.wins,
+    // chat intentionally omitted — AI transcripts stay session-only
+    story: s.story,
+    triggers: s.triggers,
+    standingGoals: s.standingGoals,
+    slips: s.slips,
+    localPrayers: s.localPrayers,
+    journal: s.journal,
+    amenedIds: s.amenedIds,
+    displayName: s.displayName,
+    dailyEncouragementEnabled: s.dailyEncouragementEnabled,
+    dailyNotifyHour: s.dailyNotifyHour,
+    dailyNotifyMinute: s.dailyNotifyMinute,
+    lastDailyNotifyDate: s.lastDailyNotifyDate,
+    sponsor: s.sponsor,
+    celebratedMilestones: s.celebratedMilestones,
+  };
+}
+
+/** Upgrade persisted data from an older store version (also used for backups). */
+function migratePersisted(persisted: unknown, version: number): Record<string, unknown> {
+  const p = { ...((persisted ?? {}) as Record<string, unknown>) };
+  p.triggers = migrateTriggers(p.triggers);
+  if (version < 6) {
+    // v6: sponsor + celebrated milestones. Safe defaults.
+    if (!("sponsor" in p)) p.sponsor = null;
+    if (!Array.isArray(p.celebratedMilestones)) p.celebratedMilestones = [];
+  }
+  return p;
+}
+
+/** Merge persisted data onto a base state (also used for backups). */
+function mergePersisted(persisted: unknown, current: AppState): AppState {
+  const p = (persisted ?? {}) as Partial<AppState>;
+  return {
+    ...current,
+    ...p,
+    onboarded: typeof p.onboarded === "boolean" ? p.onboarded : current.onboarded,
+    plan: stringFields(EMPTY_PLAN, p.plan),
+    story: stringFields(EMPTY_STORY, p.story),
+    goal: p.goal ? stringFields({ text: "", date: "" }, p.goal) : current.goal,
+    struggles: arr<StruggleId>(p.struggles),
+    checkins: arr<CheckIn>(p.checkins),
+    wins: arr<UrgeWin>(p.wins),
+    // Prefer session chat; drop any legacy persisted transcripts
+    chat: current.chat,
+    triggers: migrateTriggers(p.triggers ?? []),
+    standingGoals: arr<StandingGoal>(p.standingGoals),
+    slips: arr<Slip>(p.slips),
+    localPrayers: arr<LocalPrayer>(p.localPrayers),
+    journal: arr<JournalEntry>(p.journal),
+    amenedIds: arr<number>(p.amenedIds),
+    displayName: typeof p.displayName === "string" ? p.displayName : "",
+    dailyEncouragementEnabled: p.dailyEncouragementEnabled === true,
+    dailyNotifyHour:
+      typeof p.dailyNotifyHour === "number" ? p.dailyNotifyHour : DEFAULT_NOTIFY_HOUR,
+    dailyNotifyMinute:
+      typeof p.dailyNotifyMinute === "number" ? p.dailyNotifyMinute : DEFAULT_NOTIFY_MINUTE,
+    lastDailyNotifyDate: typeof p.lastDailyNotifyDate === "string" ? p.lastDailyNotifyDate : "",
+    sponsor: migrateSponsor(p.sponsor),
+    celebratedMilestones: arr<unknown>(p.celebratedMilestones).filter(
+      (k): k is string => typeof k === "string",
+    ),
+  };
+}
+
+/** Snapshot of the persisted data fields, for "Download a backup". */
+export function exportableState(): Record<string, unknown> {
+  return partializeState(useAppStore.getState());
 }
 
 export const useAppStore = create<AppState>()(
@@ -247,67 +363,27 @@ export const useAppStore = create<AppState>()(
           dailyNotifyMinute: Math.min(59, Math.max(0, Math.floor(minute))),
         }),
       markDailyNotified: (dateKey) => set({ lastDailyNotifyDate: dateKey }),
+      setSponsor: (sponsor) => set({ sponsor: migrateSponsor(sponsor) }),
+      markMilestonesCelebrated: (keys) => {
+        const cur = get().celebratedMilestones;
+        const add = keys.filter((k) => !cur.includes(k));
+        if (!add.length) return;
+        set({ celebratedMilestones: [...cur, ...add].slice(-200) });
+      },
+      restoreBackup: (data, version) => {
+        const migrated = version < STORE_VERSION ? migratePersisted(data, version) : data;
+        // Start from a clean slate so nothing from this device leaks into the restore.
+        const base: AppState = { ...get(), ...INITIAL, chat: get().chat };
+        set(mergePersisted(migrated, base));
+      },
       resetAll: () => set({ ...INITIAL, chat: [OPENING] }),
     }),
     {
       name: "sober-buddy",
-      version: 5,
-      partialize: (s) => ({
-        onboarded: s.onboarded,
-        struggles: s.struggles,
-        plan: s.plan,
-        checkins: s.checkins,
-        goal: s.goal,
-        wins: s.wins,
-        // chat intentionally omitted — AI transcripts stay session-only
-        story: s.story,
-        triggers: s.triggers,
-        standingGoals: s.standingGoals,
-        slips: s.slips,
-        localPrayers: s.localPrayers,
-        journal: s.journal,
-        amenedIds: s.amenedIds,
-        displayName: s.displayName,
-        dailyEncouragementEnabled: s.dailyEncouragementEnabled,
-        dailyNotifyHour: s.dailyNotifyHour,
-        dailyNotifyMinute: s.dailyNotifyMinute,
-        lastDailyNotifyDate: s.lastDailyNotifyDate,
-      }),
-      migrate: (persisted) => {
-        const p = (persisted ?? {}) as Record<string, unknown>;
-        p.triggers = migrateTriggers(p.triggers);
-        return p as never;
-      },
-      merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<AppState>;
-        return {
-          ...current,
-          ...p,
-          plan: { ...EMPTY_PLAN, ...p.plan },
-          story: { ...EMPTY_STORY, ...p.story },
-          goal: p.goal ?? current.goal,
-          struggles: p.struggles ?? [],
-          checkins: p.checkins ?? [],
-          wins: p.wins ?? [],
-          // Prefer session chat; drop any legacy persisted transcripts
-          chat: current.chat,
-          triggers: migrateTriggers(p.triggers ?? []),
-          standingGoals: p.standingGoals ?? [],
-          slips: p.slips ?? [],
-          localPrayers: p.localPrayers ?? [],
-          journal: p.journal ?? [],
-          amenedIds: p.amenedIds ?? [],
-          displayName: p.displayName ?? "",
-          dailyEncouragementEnabled: p.dailyEncouragementEnabled ?? false,
-          dailyNotifyHour:
-            typeof p.dailyNotifyHour === "number" ? p.dailyNotifyHour : DEFAULT_NOTIFY_HOUR,
-          dailyNotifyMinute:
-            typeof p.dailyNotifyMinute === "number"
-              ? p.dailyNotifyMinute
-              : DEFAULT_NOTIFY_MINUTE,
-          lastDailyNotifyDate: p.lastDailyNotifyDate ?? "",
-        };
-      },
+      version: STORE_VERSION,
+      partialize: partializeState,
+      migrate: (persisted, version) => migratePersisted(persisted, version) as never,
+      merge: (persisted, current) => mergePersisted(persisted, current),
     },
   ),
 );

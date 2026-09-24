@@ -1,14 +1,34 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
-import { HandHelping, MessageCircle, Send } from "lucide-react";
+import { AlertTriangle, Flag, HandHelping, MessageCircle, Send, ShieldAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
 import { AvatarMark } from "@/components/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { amenWallPost, createWallPost, createWallReply, listWall, type WallKind, type WallPost } from "@/lib/prayer-wall";
+import {
+  amenWallPost,
+  createWallPost,
+  createWallReply,
+  listWall,
+  reportWallPost,
+  type WallKind,
+  type WallPost,
+} from "@/lib/prayer-wall";
+import { getDeviceId } from "@/lib/wall-identity";
+import { checkWallPrivacy, WALL_MAX_BODY } from "@/lib/wall-safety";
 import { ENCOURAGE_TEMPLATES, REQUEST_TEMPLATES } from "@/lib/messages";
 import { useAppStore } from "@/lib/store";
 import { formatRelative } from "@/lib/time";
@@ -38,10 +58,11 @@ function Wall() {
   const [loading, setLoading] = useState(true);
   const [replyFor, setReplyFor] = useState<number | null>(null);
   const [reply, setReply] = useState("");
+  const [reportTarget, setReportTarget] = useState<WallPost | null>(null);
 
   async function reload() {
     try {
-      const rows = await listWall();
+      const rows = await listWall({ data: { deviceId: getDeviceId() } });
       setPosts(rows);
     } catch {
       toast("Circle is unavailable right now.");
@@ -59,11 +80,26 @@ function Wall() {
     [posts, filter],
   );
 
+  const privacy = useMemo(() => checkWallPrivacy(body), [body]);
+  const replyPrivacy = useMemo(() => checkWallPrivacy(reply), [reply]);
+
   if (!hydrated) return <LoadingScreen />;
   if (!onboarded) return <Navigate to="/" />;
 
   async function publish() {
-    const res = await createWallPost({ data: { kind, displayName: name, body } });
+    if (privacy.blocked.length) {
+      toast(privacy.blocked[0]);
+      return;
+    }
+    let res: Awaited<ReturnType<typeof createWallPost>>;
+    try {
+      res = await createWallPost({
+        data: { kind, displayName: name, body, deviceId: getDeviceId() },
+      });
+    } catch {
+      toast("Could not post right now. Try again in a moment.");
+      return;
+    }
     if (!res.ok) {
       toast(res.error);
       return;
@@ -76,9 +112,19 @@ function Wall() {
   }
 
   async function sendReply(postId: number) {
-    const res = await createWallReply({
-      data: { postId, displayName: name || "Friend", body: reply },
-    });
+    if (replyPrivacy.blocked.length) {
+      toast(replyPrivacy.blocked[0]);
+      return;
+    }
+    let res: Awaited<ReturnType<typeof createWallReply>>;
+    try {
+      res = await createWallReply({
+        data: { postId, displayName: name || "Friend", body: reply },
+      });
+    } catch {
+      toast("Could not send right now. Try again in a moment.");
+      return;
+    }
     if (!res.ok) {
       toast(res.error);
       return;
@@ -98,6 +144,24 @@ function Wall() {
     }
     markAmen(post.id);
     setPosts((cur) => cur.map((p) => (p.id === post.id ? { ...p, amenCount: res.count } : p)));
+  }
+
+  async function confirmReport() {
+    const post = reportTarget;
+    setReportTarget(null);
+    if (!post) return;
+    try {
+      const res = await reportWallPost({ data: { postId: post.id, deviceId: getDeviceId() } });
+      if (!res.ok) {
+        toast(res.error);
+        return;
+      }
+    } catch {
+      toast("Could not send the report. Try again in a moment.");
+      return;
+    }
+    setPosts((cur) => cur.filter((p) => p.id !== post.id));
+    toast("Thank you. We've hidden that post for you and flagged it.");
   }
 
   const templates = kind === "request" ? REQUEST_TEMPLATES : ENCOURAGE_TEMPLATES;
@@ -145,7 +209,7 @@ function Wall() {
           <Textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            maxLength={280}
+            maxLength={WALL_MAX_BODY}
             placeholder={
               kind === "request"
                 ? "Ask for prayer in a sentence or two…"
@@ -164,9 +228,22 @@ function Wall() {
               </button>
             ))}
           </div>
+          <PrivacyNotes blocked={privacy.blocked} warnings={privacy.warnings} />
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            This is public. Use a first name only, and leave out last names, phone numbers, emails,
+            and addresses.
+          </p>
           <div className="flex items-center justify-between gap-2">
-            <p className="font-mono text-[10px] tabular-nums text-muted-foreground">{body.length}/280</p>
-            <Button size="sm" onClick={() => void publish()} disabled={body.trim().length < 8 || name.trim().length < 2}>
+            <p className="font-mono text-[10px] tabular-nums text-muted-foreground">
+              {body.length}/{WALL_MAX_BODY}
+            </p>
+            <Button
+              size="sm"
+              onClick={() => void publish()}
+              disabled={
+                body.trim().length < 8 || name.trim().length < 2 || privacy.blocked.length > 0
+              }
+            >
               <Send className="size-4" />
               Post
             </Button>
@@ -266,6 +343,16 @@ function Wall() {
                   <MessageCircle className="size-4" />
                   Encourage
                 </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto text-muted-foreground"
+                  onClick={() => setReportTarget(p)}
+                  aria-label={`Report post from ${p.displayName}`}
+                >
+                  <Flag className="size-4" />
+                  Report
+                </Button>
               </div>
 
               {replyFor === p.id ? (
@@ -274,8 +361,14 @@ function Wall() {
                     value={reply}
                     onChange={(e) => setReply(e.target.value)}
                     placeholder="A short word of encouragement…"
+                    maxLength={WALL_MAX_BODY}
                   />
-                  <Button size="sm" onClick={() => void sendReply(p.id)} disabled={reply.trim().length < 8}>
+                  <PrivacyNotes blocked={replyPrivacy.blocked} warnings={replyPrivacy.warnings} />
+                  <Button
+                    size="sm"
+                    onClick={() => void sendReply(p.id)}
+                    disabled={reply.trim().length < 8 || replyPrivacy.blocked.length > 0}
+                  >
                     Send encouragement
                   </Button>
                 </div>
@@ -284,6 +377,49 @@ function Wall() {
           );
         })}
       </section>
+
+      <AlertDialog open={reportTarget !== null} onOpenChange={(o) => !o && setReportTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Report this post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Report posts that share someone&apos;s private details, are hurtful, or don&apos;t
+              belong in a prayer circle. It will be hidden for you right away, and hidden for
+              everyone if several people report it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmReport()}>Report post</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppFrame>
+  );
+}
+
+function PrivacyNotes({ blocked, warnings }: { blocked: string[]; warnings: string[] }) {
+  if (!blocked.length && !warnings.length) return null;
+  return (
+    <div className="space-y-1.5">
+      {blocked.map((msg) => (
+        <p
+          key={msg}
+          className="flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs leading-relaxed text-destructive"
+        >
+          <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
+          {msg}
+        </p>
+      ))}
+      {warnings.map((msg) => (
+        <p
+          key={msg}
+          className="flex items-start gap-2 rounded-md bg-muted px-3 py-2 text-xs leading-relaxed text-muted-foreground"
+        >
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+          {msg}
+        </p>
+      ))}
+    </div>
   );
 }

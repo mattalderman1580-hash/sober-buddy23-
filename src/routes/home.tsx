@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
+import { MilestoneCelebration, NextMilestoneCard } from "@/components/milestones";
 import { NeedHelpNow } from "@/components/need-help-now";
 import { Sparkline } from "@/components/sparkline";
 import { Button } from "@/components/ui/button";
@@ -90,6 +91,9 @@ function Home() {
         <Metric label="Chk-in" value={String(checkins.length)} />
         <Metric label="Wins" value={String(wins.length)} />
       </div>
+
+      <NextMilestoneCard className="mt-2" />
+      <MilestoneCelebration />
 
       <Card className="mt-3">
         <CardContent className="p-4">

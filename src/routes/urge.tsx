@@ -6,6 +6,7 @@ import { AppFrame, LoadingScreen } from "@/components/app-frame";
 import { NeedHelpNow } from "@/components/need-help-now";
 import { Breathing } from "@/components/breathing";
 import { SpeakButton } from "@/components/speak-button";
+import { SponsorCall } from "@/components/sponsor-call";
 import { UrgeTimer } from "@/components/urge-timer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,6 +98,8 @@ function Urge() {
         {personalize(struggles).urgeFraming}
         {story.called ? ` I'm with you, ${story.called}.` : null}
       </div>
+
+      <SponsorCall className="mb-3" showSetupLink />
 
       <AiDisclosure className="mb-3" />
       <NeedHelpNow variant="banner" className="mb-3" />
