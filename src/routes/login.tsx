@@ -1,11 +1,12 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CrossGlyph } from "@/components/cross-glyph";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
+import { SOCIAL_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
+import { getAuthConfig } from "@/lib/auth/auth-config";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAppStore } from "@/lib/store";
 import { useHasHydrated } from "@/lib/use-hydrated";
@@ -34,6 +35,20 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // Google shows only when GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are set on the server.
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    getAuthConfig()
+      .then((c) => {
+        if (!cancelled) setGoogleEnabled(c.google);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const socialProviders = SOCIAL_PROVIDERS.filter((p) => p.providerId === "google" && googleEnabled);
 
   if (!hydrated || isPending) {
     return (
@@ -106,8 +121,7 @@ function Login() {
           {mode === "up" ? "Create your account" : "Welcome back"}
         </h1>
         <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-          Use an email and password. Google and X still work when this app is opened from its Grok
-          link.
+          Use an email and password{googleEnabled ? ", or continue with Google" : ""}.
         </p>
 
         {authEnabled ? (
@@ -162,10 +176,12 @@ function Login() {
               {mode === "up" ? "I already have an account" : "Create an account"}
             </Button>
 
-            <p className="pt-2 text-center text-xs uppercase tracking-[0.14em] text-muted-foreground">
-              Or
-            </p>
-            {GROK_PROVIDERS.map((p) => (
+            {socialProviders.length > 0 ? (
+              <p className="pt-2 text-center text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                Or
+              </p>
+            ) : null}
+            {socialProviders.map((p) => (
               <Button
                 key={p.providerId}
                 type="button"

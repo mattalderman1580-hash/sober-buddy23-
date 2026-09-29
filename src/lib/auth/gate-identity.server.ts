@@ -4,7 +4,7 @@ import {
   type JWK,
   type JWTVerifyGetKey,
 } from "jose";
-import { env, isWorkspacePreview } from "../env.server.ts";
+import { env, isSelfHosted, isWorkspacePreview } from "../env.server.ts";
 
 export const GATE_IDENTITY_HEADER = "x-grok-identity";
 export const GATE_JWKS_PATH = "/__gate/identity-key";
@@ -27,6 +27,8 @@ export type GateJwks = { keys: JWK[] };
 export type JwksFetch = (url: string) => Promise<GateJwks | null>;
 
 export function gateIdentityEnabled(): boolean {
+  // The Grok edge gate does not exist on a self-hosted (Vercel) deployment.
+  if (isSelfHosted()) return false;
   return env("VITE_AUTH_ENABLED") !== "false";
 }
 
