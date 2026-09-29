@@ -23,6 +23,8 @@ const FIELD_TYPES = {
   journal: "array",
   amenedIds: "array",
   displayName: "string",
+  place: "string",
+  lifeGoals: "object",
   dailyEncouragementEnabled: "boolean",
   dailyNotifyHour: "number",
   dailyNotifyMinute: "number",

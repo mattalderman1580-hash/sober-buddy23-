@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckinRouteImport } from './routes/checkin'
 import { Route as FaithRouteImport } from './routes/faith'
+import { Route as FamilyRouteImport } from './routes/family'
 import { Route as GoalRouteImport } from './routes/goal'
 import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as HelpRouteImport } from './routes/help'
@@ -45,6 +46,11 @@ const CheckinRoute = CheckinRouteImport.update({
 const FaithRoute = FaithRouteImport.update({
   id: '/faith',
   path: '/faith',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FamilyRoute = FamilyRouteImport.update({
+  id: '/family',
+  path: '/family',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GoalRoute = GoalRouteImport.update({
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/checkin': typeof CheckinRoute
   '/faith': typeof FaithRoute
+  '/family': typeof FamilyRoute
   '/goal': typeof GoalRoute
   '/goals': typeof GoalsRoute
   '/help': typeof HelpRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/checkin': typeof CheckinRoute
   '/faith': typeof FaithRoute
+  '/family': typeof FamilyRoute
   '/goal': typeof GoalRoute
   '/goals': typeof GoalsRoute
   '/help': typeof HelpRoute
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/checkin': typeof CheckinRoute
   '/faith': typeof FaithRoute
+  '/family': typeof FamilyRoute
   '/goal': typeof GoalRoute
   '/goals': typeof GoalsRoute
   '/help': typeof HelpRoute
@@ -222,6 +231,7 @@ export interface FileRouteTypes {
     | '/'
     | '/checkin'
     | '/faith'
+    | '/family'
     | '/goal'
     | '/goals'
     | '/help'
@@ -246,6 +256,7 @@ export interface FileRouteTypes {
     | '/'
     | '/checkin'
     | '/faith'
+    | '/family'
     | '/goal'
     | '/goals'
     | '/help'
@@ -270,6 +281,7 @@ export interface FileRouteTypes {
     | '/'
     | '/checkin'
     | '/faith'
+    | '/family'
     | '/goal'
     | '/goals'
     | '/help'
@@ -295,6 +307,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CheckinRoute: typeof CheckinRoute
   FaithRoute: typeof FaithRoute
+  FamilyRoute: typeof FamilyRoute
   GoalRoute: typeof GoalRoute
   GoalsRoute: typeof GoalsRoute
   HelpRoute: typeof HelpRoute
@@ -337,6 +350,13 @@ declare module '@tanstack/react-router' {
       path: '/faith'
       fullPath: '/faith'
       preLoaderRoute: typeof FaithRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/family': {
+      id: '/family'
+      path: '/family'
+      fullPath: '/family'
+      preLoaderRoute: typeof FamilyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/goal': {
@@ -479,6 +499,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CheckinRoute: CheckinRoute,
   FaithRoute: FaithRoute,
+  FamilyRoute: FamilyRoute,
   GoalRoute: GoalRoute,
   GoalsRoute: GoalsRoute,
   HelpRoute: HelpRoute,

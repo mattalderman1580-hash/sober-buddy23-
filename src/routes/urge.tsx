@@ -39,6 +39,7 @@ function Urge() {
   const standingGoals = useAppStore((s) => s.standingGoals);
   const slips = useAppStore((s) => s.slips);
   const goal = useAppStore((s) => s.goal);
+  const lifeGoals = useAppStore((s) => s.lifeGoals);
   const chat = useAppStore((s) => s.chat);
   const addChat = useAppStore((s) => s.addChat);
   const resetChat = useAppStore((s) => s.resetChat);
@@ -72,7 +73,7 @@ function Urge() {
       const res = await askCompanion({
         data: {
           struggles: labelsFor(struggles),
-          profile: personalContext({ story, plan, triggers, standingGoals, slips, goal }),
+          profile: personalContext({ story, plan, triggers, standingGoals, slips, goal, lifeGoals }),
           action,
           message: spoken,
           history,

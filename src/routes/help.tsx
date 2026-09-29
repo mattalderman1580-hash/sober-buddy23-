@@ -1,9 +1,12 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { ExternalLink, MessageSquare, Phone } from "lucide-react";
+import { ExternalLink, MapPin, MessageSquare, Phone } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
 import { SponsorCall } from "@/components/sponsor-call";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/lib/store";
 import { useHasHydrated } from "@/lib/use-hydrated";
 import { formatPhoneHref, parseContacts } from "@/lib/utils";
@@ -34,11 +37,41 @@ const MEETING_FINDERS = [
   },
 ] as const;
 
+function mapsSearch(query: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 function Help() {
   const hydrated = useHasHydrated();
   const onboarded = useAppStore((s) => s.onboarded);
   const contactsRaw = useAppStore((s) => s.plan.contacts);
   const contacts = parseContacts(contactsRaw);
+  const place = useAppStore((s) => s.place);
+  const setPlace = useAppStore((s) => s.setPlace);
+  const [draft, setDraft] = useState(place);
+  const near = place.trim();
+  const nearby = [
+    {
+      name: "A.A. meetings nearby",
+      blurb: near ? `Meetings near ${near}` : "Add a city or ZIP for a closer search",
+      href: mapsSearch(near ? `AA meetings near ${near}` : "AA meetings"),
+    },
+    {
+      name: "N.A. meetings nearby",
+      blurb: near ? `Meetings near ${near}` : "Add a city or ZIP for a closer search",
+      href: mapsSearch(near ? `NA meetings near ${near}` : "NA meetings"),
+    },
+    {
+      name: "Health food stores",
+      blurb: near ? `Stores near ${near}` : "Natural groceries and health food",
+      href: mapsSearch(near ? `health food store near ${near}` : "health food store"),
+    },
+    {
+      name: "Natural grocery",
+      blurb: near ? `Grocers near ${near}` : "Produce and whole-food markets",
+      href: mapsSearch(near ? `natural grocery store near ${near}` : "natural grocery store"),
+    },
+  ];
 
   if (!hydrated) return <LoadingScreen />;
   if (!onboarded) return <Navigate to="/" />;
@@ -106,6 +139,52 @@ function Help() {
             <span className="min-w-0">
               <span className="block text-sm font-medium">{m.name}</span>
               <span className="block text-xs text-muted-foreground">{m.blurb}</span>
+            </span>
+            <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
+          </a>
+        ))}
+      </section>
+
+      <section className="mt-6 space-y-2">
+        <p className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground">
+          NEAR YOU
+        </p>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          {near
+            ? `Using ${near}. Change it anytime — it stays on this device.`
+            : "Set a city or ZIP now, or later. It is only used to open map searches for meetings and health food stores."}
+        </p>
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setPlace(draft);
+            setDraft(draft.trim());
+            toast(draft.trim() ? "Location saved for later searches." : "Location cleared.");
+          }}
+        >
+          <Input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="City or ZIP"
+            aria-label="Your city or ZIP"
+          />
+          <Button type="submit">Save</Button>
+        </form>
+        {nearby.map((m) => (
+          <a
+            key={m.name}
+            href={m.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3"
+          >
+            <span className="min-w-0">
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <MapPin className="size-3.5 text-primary" />
+                {m.name}
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">{m.blurb}</span>
             </span>
             <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
           </a>

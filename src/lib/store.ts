@@ -5,6 +5,7 @@ import type {
   CheckIn,
   DailyGoal,
   JournalEntry,
+  LifeGoals,
   LocalPrayer,
   RecoveryPlan,
   Slip,
@@ -15,7 +16,7 @@ import type {
   TriggerTag,
   UrgeWin,
 } from "@/lib/types";
-import { EMPTY_PLAN, EMPTY_STORY } from "@/lib/types";
+import { EMPTY_LIFE_GOALS, EMPTY_PLAN, EMPTY_STORY } from "@/lib/types";
 import {
   DEFAULT_NOTIFY_HOUR,
   DEFAULT_NOTIFY_MINUTE,
@@ -23,7 +24,7 @@ import {
 import { todayKey, uid } from "@/lib/utils";
 
 /** Persisted store version. Bump when the persisted shape changes. */
-export const STORE_VERSION = 6;
+export const STORE_VERSION = 7;
 
 interface AppState {
   onboarded: boolean;
@@ -41,6 +42,9 @@ interface AppState {
   journal: JournalEntry[];
   amenedIds: number[];
   displayName: string;
+  /** City, neighborhood, or ZIP. Used later for nearby meetings and stores. */
+  place: string;
+  lifeGoals: LifeGoals;
   dailyEncouragementEnabled: boolean;
   dailyNotifyHour: number;
   dailyNotifyMinute: number;
@@ -60,6 +64,8 @@ interface AppState {
   clearCheckins: () => void;
   saveStory: (story: Story) => void;
   setDisplayName: (name: string) => void;
+  setPlace: (place: string) => void;
+  saveLifeGoals: (goals: LifeGoals) => void;
   addTrigger: (label: string) => void;
   moveTrigger: (id: string, direction: "up" | "down") => void;
   removeTrigger: (id: string) => void;
@@ -104,6 +110,8 @@ const INITIAL = {
   journal: [] as JournalEntry[],
   amenedIds: [] as number[],
   displayName: "",
+  place: "",
+  lifeGoals: EMPTY_LIFE_GOALS,
   dailyEncouragementEnabled: false,
   dailyNotifyHour: DEFAULT_NOTIFY_HOUR,
   dailyNotifyMinute: DEFAULT_NOTIFY_MINUTE,
@@ -177,6 +185,8 @@ function partializeState(s: AppState) {
     journal: s.journal,
     amenedIds: s.amenedIds,
     displayName: s.displayName,
+    place: s.place,
+    lifeGoals: s.lifeGoals,
     dailyEncouragementEnabled: s.dailyEncouragementEnabled,
     dailyNotifyHour: s.dailyNotifyHour,
     dailyNotifyMinute: s.dailyNotifyMinute,
@@ -194,6 +204,10 @@ function migratePersisted(persisted: unknown, version: number): Record<string, u
     // v6: sponsor + celebrated milestones. Safe defaults.
     if (!("sponsor" in p)) p.sponsor = null;
     if (!Array.isArray(p.celebratedMilestones)) p.celebratedMilestones = [];
+  }
+  if (version < 7) {
+    if (typeof p.place !== "string") p.place = "";
+    if (!p.lifeGoals || typeof p.lifeGoals !== "object") p.lifeGoals = { ...EMPTY_LIFE_GOALS };
   }
   return p;
 }
@@ -220,6 +234,8 @@ function mergePersisted(persisted: unknown, current: AppState): AppState {
     journal: arr<JournalEntry>(p.journal),
     amenedIds: arr<number>(p.amenedIds),
     displayName: typeof p.displayName === "string" ? p.displayName : "",
+    place: typeof p.place === "string" ? p.place.slice(0, 80) : "",
+    lifeGoals: stringFields(EMPTY_LIFE_GOALS, p.lifeGoals),
     dailyEncouragementEnabled: p.dailyEncouragementEnabled === true,
     dailyNotifyHour:
       typeof p.dailyNotifyHour === "number" ? p.dailyNotifyHour : DEFAULT_NOTIFY_HOUR,
@@ -265,6 +281,8 @@ export const useAppStore = create<AppState>()(
       clearCheckins: () => set({ checkins: [] }),
       saveStory: (story) => set({ story }),
       setDisplayName: (name) => set({ displayName: name }),
+      setPlace: (place) => set({ place: place.trim().slice(0, 80) }),
+      saveLifeGoals: (goals) => set({ lifeGoals: stringFields(EMPTY_LIFE_GOALS, goals) }),
       addTrigger: (label) => {
         const clean = label.trim();
         if (!clean) return;
@@ -395,6 +413,7 @@ export function personalContext(s: {
   standingGoals: StandingGoal[];
   slips: Slip[];
   goal: DailyGoal;
+  lifeGoals?: LifeGoals;
 }): string {
   // Minimum needed for a helpful reply — no journal, prayers, contacts, full story, or slip history.
   const bits: string[] = [];
@@ -410,6 +429,8 @@ export function personalContext(s: {
     bits.push(`Top triggers: ${top.map((t) => t.label).join(", ")}.`);
   }
   if (s.goal.text) bits.push(`Today's goal: ${s.goal.text.slice(0, 80)}`);
+  if (s.story.family) bits.push(`Family: ${s.story.family.slice(0, 80)}`);
+  if (s.lifeGoals?.family) bits.push(`Family goal: ${s.lifeGoals.family.slice(0, 80)}`);
   return bits.join(" ");
 }
 
@@ -419,4 +440,6 @@ export const COMPANION_PROFILE_FIELDS = [
   "what you are protecting (short), or reasons if protecting is empty",
   "up to 3 highest-ranked triggers (labels only)",
   "today's goal (short, if set)",
+  "family you named (short, if set)",
+  "family goal (short, if set)",
 ] as const;

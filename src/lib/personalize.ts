@@ -6,6 +6,7 @@ export type QuickLinkId =
   | "/people"
   | "/urge"
   | "/story"
+  | "/family"
   | "/patterns"
   | "/checkin"
   | "/goals"

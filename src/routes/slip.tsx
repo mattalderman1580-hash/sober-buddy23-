@@ -26,6 +26,7 @@ function SlipPage() {
   const triggers = useAppStore((s) => s.triggers);
   const standingGoals = useAppStore((s) => s.standingGoals);
   const goal = useAppStore((s) => s.goal);
+  const lifeGoals = useAppStore((s) => s.lifeGoals);
   const [whatHappened, setWhat] = useState("");
   const [learned, setLearned] = useState("");
   const [nextStep, setNext] = useState("");
@@ -42,7 +43,7 @@ function SlipPage() {
       const res = await askCompanion({
         data: {
           struggles: labelsFor(struggles),
-          profile: personalContext({ story, plan, triggers, standingGoals, slips, goal }),
+          profile: personalContext({ story, plan, triggers, standingGoals, slips, goal, lifeGoals }),
           action: "free",
           message: `I slipped. No shame — help me learn. What happened: ${whatHappened}. What I think I learned: ${learned}. Next step I wrote: ${nextStep}.`,
           history: [],

@@ -1,5 +1,4 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
@@ -25,19 +24,17 @@ function Onboarding() {
   const onboarded = useAppStore((s) => s.onboarded);
   const savedStruggles = useAppStore((s) => s.struggles);
   const savedName = useAppStore((s) => s.displayName);
-  const triggers = useAppStore((s) => s.triggers);
+  const savedPlace = useAppStore((s) => s.place);
   const setDisplayName = useAppStore((s) => s.setDisplayName);
+  const setPlace = useAppStore((s) => s.setPlace);
   const finishOnboarding = useAppStore((s) => s.finishOnboarding);
   const setStruggles = useAppStore((s) => s.setStruggles);
-  const addTrigger = useAppStore((s) => s.addTrigger);
-  const removeTrigger = useAppStore((s) => s.removeTrigger);
-  const moveTrigger = useAppStore((s) => s.moveTrigger);
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>(1);
   const [name, setName] = useState(savedName);
   const [selected, setSelected] = useState<StruggleId[]>(savedStruggles);
-  const [draft, setDraft] = useState("");
+  const [where, setWhere] = useState(savedPlace);
 
   const hint = useMemo(() => personalize(selected).setupHint, [selected]);
 
@@ -67,19 +64,18 @@ function Onboarding() {
     setStep(3);
   }
 
-  function finish() {
+  function finish(skipPlace: boolean) {
     if (!selected.length) {
       toast("Choose at least one area you want help with.");
       setStep(2);
       return;
     }
     setDisplayName(name.trim());
+    if (!skipPlace) setPlace(where);
     finishOnboarding(selected);
     toast(onboarded ? "Saved. Your home is updated." : "You are set. Welcome home.");
     navigate({ to: "/home" });
   }
-
-  const ranked = [...triggers].sort((a, b) => a.rank - b.rank);
 
   return (
     <AppFrame
@@ -154,83 +150,34 @@ function Onboarding() {
 
       {step === 3 ? (
         <div className="mt-6">
-          <h2 className="font-display text-2xl font-medium leading-tight">
-            Write & rank your triggers
-          </h2>
+          <h2 className="font-display text-2xl font-medium leading-tight">Where are you?</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            {personalize(selected).empty.triggers} Highest stays on top — use the arrows to reorder.
+            A city or ZIP is enough. It stays on this device and is only used later to open nearby
+            meetings and health food stores. You can skip this and set it whenever you are ready.
           </p>
-
-          <form
-            className="mt-4 flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              addTrigger(draft);
-              setDraft("");
-            }}
-          >
+          <div className="mt-5 space-y-2">
+            <Label htmlFor="place">City, neighborhood, or ZIP</Label>
             <Input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="e.g. Late night alone"
-              aria-label="New trigger"
+              id="place"
+              value={where}
+              onChange={(e) => setWhere(e.target.value)}
+              placeholder="e.g. Tulsa, OK or 74103"
+              autoComplete="postal-code"
             />
-            <Button type="submit">Add</Button>
-          </form>
-
-          <div className="mt-4 space-y-2">
-            {ranked.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
-                No triggers yet. Add at least one if you can — you can finish and edit later.
-              </p>
-            ) : (
-              ranked.map((t, index) => (
-                <div
-                  key={t.id}
-                  className="flex items-center gap-2 rounded-xl border border-border bg-card p-3"
-                >
-                  <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                    #{index + 1}
-                  </span>
-                  <p className="min-w-0 flex-1 truncate text-sm font-medium">{t.label}</p>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    aria-label="Move up"
-                    disabled={index === 0}
-                    onClick={() => moveTrigger(t.id, "up")}
-                  >
-                    <ChevronUp className="size-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    aria-label="Move down"
-                    disabled={index === ranked.length - 1}
-                    onClick={() => moveTrigger(t.id, "down")}
-                  >
-                    <ChevronDown className="size-4" />
-                  </Button>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => removeTrigger(t.id)}>
-                    Remove
-                  </Button>
-                </div>
-              ))
-            )}
           </div>
-
           <div className="mt-6 flex gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setStep(2)}>
               Back
             </Button>
-            <Button className="flex-1" onClick={finish}>
+            <Button className="flex-1" onClick={() => finish(false)}>
               {onboarded ? "Save and continue" : "Finish setup"}
             </Button>
           </div>
+          <Button variant="ghost" className="mt-1 w-full" onClick={() => finish(true)}>
+            Set location later
+          </Button>
           {!onboarded ? (
-            <Button variant="ghost" className="mt-1 w-full" asChild>
+            <Button variant="ghost" className="w-full" asChild>
               <Link to="/">Back to welcome</Link>
             </Button>
           ) : null}

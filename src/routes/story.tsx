@@ -1,4 +1,4 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { AppFrame, LoadingScreen } from "@/components/app-frame";
@@ -23,6 +23,9 @@ function StoryPage() {
   const [faith, setFaith] = useState(saved.faith);
   const [protecting, setProtecting] = useState(saved.protecting);
   const [goodDay, setGoodDay] = useState(saved.goodDay);
+  const [howItStarted, setHowItStarted] = useState(saved.howItStarted);
+  const [hope, setHope] = useState(saved.hope);
+  const [turningPoint, setTurningPoint] = useState(saved.turningPoint);
   const [handle, setHandle] = useState(displayName);
 
   if (!hydrated) return <LoadingScreen />;
@@ -62,11 +65,51 @@ function StoryPage() {
         <Field label="What does a good day look like?" htmlFor="good">
           <Textarea id="good" value={goodDay} onChange={(e) => setGoodDay(e.target.value)} />
         </Field>
+        <Field label="How did this start?" htmlFor="started">
+          <Textarea
+            id="started"
+            value={howItStarted}
+            onChange={(e) => setHowItStarted(e.target.value)}
+            placeholder="The part of the story that still matters…"
+          />
+        </Field>
+        <Field label="What do you want back?" htmlFor="hope">
+          <Textarea
+            id="hope"
+            value={hope}
+            onChange={(e) => setHope(e.target.value)}
+            placeholder="Peace, trust, health, time with your people…"
+          />
+        </Field>
+        <Field label="What is turning?" htmlFor="turning">
+          <Textarea
+            id="turning"
+            value={turningPoint}
+            onChange={(e) => setTurningPoint(e.target.value)}
+            placeholder="The decision you are making now…"
+          />
+        </Field>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Family belongs on its own page so you can name who stands with you.{" "}
+          <Link to="/family" className="font-medium text-foreground underline-offset-2 hover:underline">
+            Open family support
+          </Link>
+        </p>
         <Button
           className="w-full"
           size="lg"
           onClick={() => {
-            saveStory({ called, narrative, faith, protecting, goodDay });
+            saveStory({
+              ...saved,
+              called,
+              narrative,
+              faith,
+              protecting,
+              goodDay,
+              howItStarted,
+              hope,
+              turningPoint,
+            });
             setDisplayName(handle.trim());
             toast("Story saved on this device.");
           }}

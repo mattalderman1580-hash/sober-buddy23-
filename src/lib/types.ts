@@ -68,6 +68,12 @@ export interface Story {
   faith: string;
   protecting: string;
   goodDay: string;
+  howItStarted: string;
+  hope: string;
+  turningPoint: string;
+  family: string;
+  familySupport: string;
+  familyNeed: string;
 }
 
 export interface TriggerTag {
@@ -103,12 +109,32 @@ export interface JournalEntry {
   body: string;
 }
 
+export interface LifeGoals {
+  family: string;
+  health: string;
+  faith: string;
+  relationships: string;
+}
+
+export const EMPTY_LIFE_GOALS: LifeGoals = {
+  family: "",
+  health: "",
+  faith: "",
+  relationships: "",
+};
+
 export const EMPTY_STORY: Story = {
   called: "",
   narrative: "",
   faith: "",
   protecting: "",
   goodDay: "",
+  howItStarted: "",
+  hope: "",
+  turningPoint: "",
+  family: "",
+  familySupport: "",
+  familyNeed: "",
 };
 
 export const EMPTY_PLAN: RecoveryPlan = {
