@@ -1,7 +1,9 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { CrossGlyph } from "@/components/cross-glyph";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { GROK_PROVIDERS, signIn } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAppStore } from "@/lib/store";
 import { useHasHydrated } from "@/lib/use-hydrated";
@@ -23,6 +25,8 @@ function Welcome() {
 
   if (!isPending && user && onboarded) return <Navigate to="/home" />;
   if (!isPending && user && !onboarded) return <Navigate to="/onboarding" />;
+
+  const google = GROK_PROVIDERS.find((p) => p.idp === "google");
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-10 pt-[max(2.5rem,env(safe-area-inset-top))]">
@@ -57,8 +61,20 @@ function Welcome() {
         </Card>
       </div>
 
-      <Button asChild size="lg" className="mt-8 w-full">
-        <Link to="/login">Sign in to begin</Link>
+      <Button
+        size="lg"
+        className="mt-8 w-full"
+        onClick={() => {
+          if (!google) return;
+          void signIn(google.providerId, { callbackURL: "/" }).catch((err: unknown) => {
+            toast(err instanceof Error ? err.message : "Google sign-in failed. Try again.");
+          });
+        }}
+      >
+        Continue with Google
+      </Button>
+      <Button asChild variant="ghost" className="mt-2 w-full">
+        <Link to="/login">Email or other sign-in</Link>
       </Button>
       <p className="mt-4 text-center text-xs leading-relaxed text-muted-foreground">
         Support for the moment — not a replacement for professional or emergency care.

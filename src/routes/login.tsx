@@ -28,7 +28,7 @@ function Login() {
   const hydrated = useHasHydrated();
   const { user, isPending } = useCurrentUserState();
   const onboarded = useAppStore((s) => s.onboarded);
-  const [mode, setMode] = useState<"in" | "up">("up");
+  const [mode, setMode] = useState<"in" | "up">("in");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -103,85 +103,87 @@ function Login() {
           <CrossGlyph className="size-7" />
         </div>
         <h1 className="mt-6 font-display text-[2rem] font-medium leading-tight tracking-tight">
-          {mode === "up" ? "Create your account" : "Welcome back"}
+          Welcome back
         </h1>
         <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-          Use an email and password. Google and X still work when this app is opened from its Grok
-          link.
+          Continue with Google to open your companion. Email is here if you already made a password.
         </p>
 
         {authEnabled ? (
-          <form className="mt-8 space-y-3" onSubmit={submitEmail}>
-            {mode === "up" ? (
-              <div className="space-y-2">
-                <Label htmlFor="account-name">Name</Label>
-                <Input
-                  id="account-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoComplete="name"
-                  placeholder="First name"
-                />
-              </div>
-            ) : null}
-            <div className="space-y-2">
-              <Label htmlFor="account-email">Email</Label>
-              <Input
-                id="account-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                placeholder="you@email.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="account-password">Password</Label>
-              <Input
-                id="account-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete={mode === "up" ? "new-password" : "current-password"}
-                placeholder="At least 8 characters"
-              />
-            </div>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            <Button type="submit" size="lg" className="w-full" disabled={busy}>
-              {busy ? "Please wait…" : mode === "up" ? "Create account" : "Sign in"}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full"
-              onClick={() => {
-                setMode(mode === "up" ? "in" : "up");
-                setError("");
-              }}
-            >
-              {mode === "up" ? "I already have an account" : "Create an account"}
-            </Button>
-
-            <p className="pt-2 text-center text-xs uppercase tracking-[0.14em] text-muted-foreground">
-              Or
-            </p>
+          <div className="mt-8 space-y-3">
             {GROK_PROVIDERS.map((p) => (
               <Button
                 key={p.providerId}
                 type="button"
                 size="lg"
-                variant="outline"
+                variant={p.idp === "google" ? "default" : "outline"}
                 className="w-full"
                 onClick={() => {
                   void signIn(p.providerId, { callbackURL: "/" }).catch((err: unknown) => {
-                    toast(err instanceof Error ? err.message : "Sign-in failed. Try email instead.");
+                    toast(err instanceof Error ? err.message : "Sign-in failed. Try again.");
                   });
                 }}
               >
                 Continue with {p.label}
               </Button>
             ))}
-          </form>
+
+            <p className="pt-2 text-center text-xs uppercase tracking-[0.14em] text-muted-foreground">
+              Or use email
+            </p>
+
+            <form className="space-y-3" onSubmit={submitEmail}>
+              {mode === "up" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="account-name">Name</Label>
+                  <Input
+                    id="account-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    autoComplete="name"
+                    placeholder="First name"
+                  />
+                </div>
+              ) : null}
+              <div className="space-y-2">
+                <Label htmlFor="account-email">Email</Label>
+                <Input
+                  id="account-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  placeholder="you@email.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="account-password">Password</Label>
+                <Input
+                  id="account-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete={mode === "up" ? "new-password" : "current-password"}
+                  placeholder="At least 8 characters"
+                />
+              </div>
+              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              <Button type="submit" size="lg" variant="secondary" className="w-full" disabled={busy}>
+                {busy ? "Please wait…" : mode === "up" ? "Create account" : "Sign in with email"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setMode(mode === "up" ? "in" : "up");
+                  setError("");
+                }}
+              >
+                {mode === "up" ? "I already have an account" : "Create an account"}
+              </Button>
+            </form>
+          </div>
         ) : (
           <p className="mt-8 text-sm text-muted-foreground">Sign-in is disabled.</p>
         )}
