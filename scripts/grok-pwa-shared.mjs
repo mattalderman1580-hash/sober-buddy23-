@@ -234,6 +234,10 @@ export function grokXCreatorHeadTags(creator = readXCreator(), creatorId = readX
 
 /** Platform "Created with Grok" banner — injected into every HTML document. */
 export function grokExtensionsHeadTags(projectId = readGrokProjectId()) {
+  // Self-hosted (the user's own Vercel project): no Grok banner script.
+  if (typeof process !== "undefined" && (process.env?.VERCEL === "1" || process.env?.SELF_HOSTED === "true")) {
+    return [];
+  }
   const id = escapeHtml(projectId);
   const tags = [];
   if (projectId) {
