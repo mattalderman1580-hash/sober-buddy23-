@@ -18,7 +18,7 @@ function useAuthConfig(): AuthConfig | null {
       })
       .catch(() => {
         // Fall back to email/password only if the config call fails.
-        if (!cancelled) setConfig({ emailPassword: true, google: false });
+        if (!cancelled) setConfig({ emailPassword: true, google: false, googleProviderId: null });
       });
     return () => {
       cancelled = true;
@@ -66,10 +66,32 @@ export function AuthForm({ callbackURL = "/" }: { callbackURL?: string }) {
     }
   }
 
-  const enabledSocial = SOCIAL_PROVIDERS.filter((p) => p.providerId === "google" && config.google);
+  const enabledSocial = SOCIAL_PROVIDERS.filter(
+    (p) => p.providerId === config.googleProviderId,
+  );
 
   return (
     <div className="w-full space-y-5">
+      {enabledSocial.length > 0 && (
+        <div className="space-y-3">
+          {enabledSocial.map((p) => (
+            <Button
+              key={p.providerId}
+              type="button"
+              size="lg"
+              className="w-full"
+              onClick={() =>
+                signIn(p.providerId, { callbackURL }).catch((err: unknown) =>
+                  setError(err instanceof Error ? err.message : "Sign-in failed"),
+                )
+              }
+            >
+              Continue with {p.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
       {config.emailPassword && (
         <form onSubmit={onSubmit} className="space-y-3" noValidate>
           {mode === "sign-up" && (
@@ -130,30 +152,6 @@ export function AuthForm({ callbackURL = "/" }: { callbackURL?: string }) {
               : "New here? Create an account"}
           </button>
         </form>
-      )}
-
-      {enabledSocial.length > 0 && (
-        <div className="space-y-3">
-          {config.emailPassword && (
-            <p className="text-center text-xs uppercase tracking-[0.14em] text-muted-foreground">or</p>
-          )}
-          {enabledSocial.map((p) => (
-            <Button
-              key={p.providerId}
-              type="button"
-              size="lg"
-              variant="outline"
-              className="w-full"
-              onClick={() =>
-                signIn(p.providerId, { callbackURL }).catch((err: unknown) =>
-                  setError(err instanceof Error ? err.message : "Sign-in failed"),
-                )
-              }
-            >
-              Continue with {p.label}
-            </Button>
-          ))}
-        </div>
       )}
 
       {!config.emailPassword && enabledSocial.length === 0 && (

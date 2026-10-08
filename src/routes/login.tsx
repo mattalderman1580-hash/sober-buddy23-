@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SOCIAL_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
 import { getAuthConfig } from "@/lib/auth/auth-config";
+import type { SocialProviderId } from "@/lib/auth/providers";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAppStore } from "@/lib/store";
 import { useHasHydrated } from "@/lib/use-hydrated";
@@ -35,20 +36,25 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  // Google shows only when GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are set on the server.
-  const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [googleProviderId, setGoogleProviderId] = useState<SocialProviderId | null>(null);
   useEffect(() => {
     let cancelled = false;
+    const sandbox =
+      typeof window !== "undefined" && window.location.hostname.endsWith(".grok-sandbox.com");
+    if (sandbox) setGoogleProviderId("grok-google");
     getAuthConfig()
       .then((c) => {
-        if (!cancelled) setGoogleEnabled(c.google);
+        if (cancelled) return;
+        if (c.googleProviderId) setGoogleProviderId(c.googleProviderId);
+        else if (!sandbox) setGoogleProviderId(null);
       })
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
   }, []);
-  const socialProviders = SOCIAL_PROVIDERS.filter((p) => p.providerId === "google" && googleEnabled);
+  const googleEnabled = googleProviderId !== null;
+  const socialProviders = SOCIAL_PROVIDERS.filter((p) => p.providerId === googleProviderId);
 
   if (!hydrated || isPending) {
     return (

@@ -1,4 +1,5 @@
 import { createAuthClient } from "better-auth/react";
+import { genericOAuthClient } from "better-auth/client/plugins";
 import { runPreSignInSignOut, runSignOut } from "../../../scripts/sign-out-plan.mjs";
 import { SOCIAL_PROVIDERS, type SocialProviderId } from "./providers";
 
@@ -17,6 +18,7 @@ import { SOCIAL_PROVIDERS, type SocialProviderId } from "./providers";
  * the visitor stays signed in.
  */
 export const authClient = createAuthClient({
+  plugins: [genericOAuthClient()],
   fetchOptions: {
     onRequest(ctx) {
       const token = getBearerToken();
@@ -141,8 +143,19 @@ export async function signIn(
     return;
   }
 
-  const { data, error } = await authClient.signIn.social({
-    provider: providerId,
+  if (providerId === "google") {
+    const { data, error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL,
+      errorCallbackURL,
+    });
+    if (error) throw new Error(error.message ?? "Sign-in failed");
+    if (data?.url) window.location.href = data.url;
+    return;
+  }
+
+  const { data, error } = await authClient.signIn.oauth2({
+    providerId,
     callbackURL,
     errorCallbackURL,
   });

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAuthConfig } from "@/lib/auth/auth-config";
 import { signIn } from "@/lib/auth/client";
+import type { SocialProviderId } from "@/lib/auth/providers";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAppStore } from "@/lib/store";
 import { useHasHydrated } from "@/lib/use-hydrated";
@@ -16,13 +17,17 @@ function Welcome() {
   const hydrated = useHasHydrated();
   const { user, isPending } = useCurrentUserState();
   const onboarded = useAppStore((s) => s.onboarded);
-  const [googleOn, setGoogleOn] = useState(false);
+  const [googleProviderId, setGoogleProviderId] = useState<SocialProviderId | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    const sandbox = window.location.hostname.endsWith(".grok-sandbox.com");
+    if (sandbox) setGoogleProviderId("grok-google");
     getAuthConfig()
       .then((config) => {
-        if (!cancelled) setGoogleOn(config.google);
+        if (cancelled) return;
+        if (config.googleProviderId) setGoogleProviderId(config.googleProviderId);
+        else if (!sandbox) setGoogleProviderId(null);
       })
       .catch(() => undefined);
     return () => {
@@ -74,12 +79,12 @@ function Welcome() {
         </Card>
       </div>
 
-      {googleOn ? (
+      {googleProviderId ? (
         <Button
           size="lg"
           className="mt-8 w-full"
           onClick={() => {
-            void signIn("google", { callbackURL: "/" }).catch((err: unknown) => {
+            void signIn(googleProviderId, { callbackURL: "/" }).catch((err: unknown) => {
               toast(err instanceof Error ? err.message : "Google sign-in failed. Try again.");
             });
           }}
