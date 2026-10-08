@@ -29,6 +29,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { orderLinks, personalize } from "@/lib/personalize";
 import { verseForDay } from "@/lib/scripture";
 import { useAppStore } from "@/lib/store";
+import { openUrgeTalk } from "@/lib/urge-talk";
 import { useHasHydrated } from "@/lib/use-hydrated";
 import { daysSince, todayKey } from "@/lib/utils";
 
@@ -119,8 +120,14 @@ function Home() {
         </Link>
       ) : null}
 
-      <Button asChild variant="crisis" size="xl" className="mt-4 w-full font-semibold">
-        <Link to="/urge">{persona.crisisCta}</Link>
+      <Button
+        type="button"
+        variant="crisis"
+        size="xl"
+        className="mt-4 w-full font-semibold"
+        onClick={() => openUrgeTalk()}
+      >
+        {persona.crisisCta}
       </Button>
 
       <NeedHelpNow variant="banner" className="mt-3" />

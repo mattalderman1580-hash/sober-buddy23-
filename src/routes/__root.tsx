@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth/provider";
 import { DailyNotificationWatcher } from "@/components/daily-notification-watcher";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
+import { UrgePopup } from "@/components/urge-popup";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "Sober Buddy";
@@ -46,6 +47,7 @@ function Root() {
         <AuthProvider>
           <DailyNotificationWatcher />
           <Outlet />
+          <UrgePopup />
         </AuthProvider>
         <Toaster
           position="top-center"
